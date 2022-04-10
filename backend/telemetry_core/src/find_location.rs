@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+use std::env;
 use std::net::Ipv4Addr;
 use std::sync::Arc;
 
@@ -142,8 +143,11 @@ impl Locator {
     }
 
     async fn iplocate_ipapi_co(&self, ip: Ipv4Addr) -> Result<Arc<NodeLocation>, anyhow::Error> {
-        let location = self.query(&format!("https://ipapi.co/{}/json", ip)).await?;
-
+        let url = match env::var("API_TOKEN").as_deref() {
+            Ok("") | Err(_) => format!("https://ipapi.co/{ip}/json"),
+            Ok(token) => format!("https://ipapi.co/{ip}?access_key={token}"),
+        };
+        let location = self.query(&url).await?;
         Ok(Arc::new(location))
     }
 
@@ -234,4 +238,16 @@ mod tests {
 
         assert!(location.is_none());
     }
+
+    #[test]
+    fn ip_api_api_key_present() {
+        env::set_var("API_TOKEN", "Foo");
+
+        let locater = Locator::new(cache);
+        let ip = Ipv4Addr::new(127, 0, 0, 1);
+
+        iplocate_ipapi_co(ip);
+    }
+
+    fn ip_api_api_key_not_present() {}
 }
