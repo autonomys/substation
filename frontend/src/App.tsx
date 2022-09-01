@@ -83,7 +83,7 @@ export default class App extends React.Component<{}, {}> {
     this.pins = new PersistentSet<Types.NodeName>('pinned_names', (pins) => {
       const { nodes } = this.appState;
 
-      nodes.mutEachAndSort((node) => node.setPinned(pins.has(node.name)));
+      nodes.mutEach((node) => node.setPinned(pins.has(node.name)));
 
       this.appUpdate({ nodes, pins });
     });

@@ -76,7 +76,7 @@ export class List extends React.Component<List.Props, {}> {
     const { selectedColumns } = appState;
     const { filter } = this.state;
 
-    let nodes = appState.nodes.sorted();
+    let nodes = appState.nodes.getList();
 
     if (filter != null) {
       nodes = nodes.filter(filter);
