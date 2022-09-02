@@ -33,7 +33,7 @@ import stable from 'stable';
 
 import './App.css';
 
-const DISABLE_NODES = true;
+const DISABLE_NODES = false;
 
 export default class App extends React.Component<{}, {}> {
   private chainsCache: ChainData[] = [];
