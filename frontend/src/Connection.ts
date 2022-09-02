@@ -45,9 +45,16 @@ export class Connection {
   public static async create(
     pins: PersistentSet<Types.NodeName>,
     appState: Readonly<State>,
-    appUpdate: Update
+    appUpdate: Update,
+    disableNodes?: boolean
   ): Promise<Connection> {
-    return new Connection(await Connection.socket(), appState, appUpdate, pins);
+    return new Connection(
+      await Connection.socket(),
+      appState,
+      appUpdate,
+      pins,
+      disableNodes
+    );
   }
 
   private static readonly utf8decoder = new TextDecoder('utf-8');
@@ -129,7 +136,8 @@ export class Connection {
     private socket: WebSocket,
     private readonly appState: Readonly<State>,
     private readonly appUpdate: Update,
-    private readonly pins: PersistentSet<Types.NodeName>
+    private readonly pins: PersistentSet<Types.NodeName>,
+    private readonly disableNodes?: boolean
   ) {
     this.bindSocket();
   }
@@ -191,6 +199,10 @@ export class Connection {
         }
 
         case ACTIONS.AddedNode: {
+          if (this.disableNodes) {
+            break;
+          }
+
           const [
             id,
             nodeDetails,
@@ -220,6 +232,10 @@ export class Connection {
         }
 
         case ACTIONS.RemovedNode: {
+          if (this.disableNodes) {
+            break;
+          }
+
           const id = message.payload;
 
           nodes.remove(id);
@@ -228,6 +244,10 @@ export class Connection {
         }
 
         case ACTIONS.StaleNode: {
+          if (this.disableNodes) {
+            break;
+          }
+
           const id = message.payload;
 
           nodes.mut(id, (node) => node.setStale(true));
@@ -236,6 +256,10 @@ export class Connection {
         }
 
         case ACTIONS.LocatedNode: {
+          if (this.disableNodes) {
+            break;
+          }
+
           const [id, lat, lon, city] = message.payload;
 
           nodes.mut(id, (node) => node.updateLocation([lat, lon, city]));
@@ -244,6 +268,10 @@ export class Connection {
         }
 
         case ACTIONS.ImportedBlock: {
+          if (this.disableNodes) {
+            break;
+          }
+
           const [id, blockDetails] = message.payload;
 
           nodes.mut(id, (node) => node.updateBlock(blockDetails));
@@ -252,6 +280,10 @@ export class Connection {
         }
 
         case ACTIONS.FinalizedBlock: {
+          if (this.disableNodes) {
+            break;
+          }
+
           const [id, height, hash] = message.payload;
 
           nodes.mut(id, (node) => node.updateFinalized(height, hash));
@@ -260,6 +292,10 @@ export class Connection {
         }
 
         case ACTIONS.NodeStats: {
+          if (this.disableNodes) {
+            break;
+          }
+
           const [id, nodeStats] = message.payload;
 
           nodes.mut(id, (node) => node.updateStats(nodeStats));
@@ -268,6 +304,10 @@ export class Connection {
         }
 
         case ACTIONS.NodeHardware: {
+          if (this.disableNodes) {
+            break;
+          }
+
           const [id, nodeHardware] = message.payload;
 
           nodes.mut(id, (node) => node.updateHardware(nodeHardware));
@@ -276,6 +316,10 @@ export class Connection {
         }
 
         case ACTIONS.NodeIO: {
+          if (this.disableNodes) {
+            break;
+          }
+
           const [id, nodeIO] = message.payload;
 
           nodes.mut(id, (node) => node.updateIO(nodeIO));

@@ -33,6 +33,8 @@ import stable from 'stable';
 
 import './App.css';
 
+const DISABLE_NODES = true;
+
 export default class App extends React.Component<{}, {}> {
   private chainsCache: ChainData[] = [];
   // Custom state for finer control over updates
@@ -122,7 +124,8 @@ export default class App extends React.Component<{}, {}> {
     this.connection = Connection.create(
       this.pins,
       this.appState,
-      this.appUpdate
+      this.appUpdate,
+      DISABLE_NODES
     );
 
     setInterval(() => (this.chainsCache = []), 10000); // Wipe sorted chains cache every 10 seconds
@@ -171,6 +174,8 @@ export default class App extends React.Component<{}, {}> {
           settings={this.settings}
           pins={this.pins}
           sortBy={this.sortBy}
+          disableNodeViews={DISABLE_NODES}
+          subscribedData={subscribedData}
         />
         {overlay}
       </div>

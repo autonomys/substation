@@ -27,7 +27,7 @@ import lastTimeIcon from '../../icons/watch.svg';
 import listIcon from '../../icons/list-alt-regular.svg';
 import worldIcon from '../../icons/location.svg';
 import settingsIcon from '../../icons/settings.svg';
-import consensusIcon from '../../icons/cube-alt.svg';
+import nodesIcon from '../../icons/blockchain-icon.svg';
 import statsIcon from '../../icons/graph.svg';
 
 import './Header.css';
@@ -36,10 +36,12 @@ export namespace Header {
   export interface Props {
     best: Types.BlockNumber;
     finalized: Types.BlockNumber;
+    nodeCount: number;
     blockTimestamp: Types.Timestamp;
     blockAverage: Maybe<Types.Milliseconds>;
     currentTab: Chain.Display;
     setDisplay: (display: Chain.Display) => void;
+    hideSettingsNav?: boolean;
   }
 }
 
@@ -55,7 +57,13 @@ export class Header extends React.Component<Header.Props, {}> {
   }
 
   public render() {
-    const { best, finalized, blockTimestamp, blockAverage } = this.props;
+    const {
+      best,
+      finalized,
+      nodeCount,
+      blockTimestamp,
+      blockAverage,
+    } = this.props;
     const { currentTab, setDisplay } = this.props;
 
     return (
@@ -74,40 +82,45 @@ export class Header extends React.Component<Header.Props, {}> {
         <Tile icon={lastTimeIcon} title="Last Block">
           <Ago when={blockTimestamp} />
         </Tile>
-        <div className="Header-tabs">
-          <Tab
-            icon={listIcon}
-            label="List"
-            display="list"
-            tab=""
-            current={currentTab}
-            setDisplay={setDisplay}
-          />
-          <Tab
-            icon={worldIcon}
-            label="Map"
-            display="map"
-            tab="map"
-            current={currentTab}
-            setDisplay={setDisplay}
-          />
-          <Tab
-            icon={statsIcon}
-            label="Stats"
-            display="stats"
-            tab="stats"
-            current={currentTab}
-            setDisplay={setDisplay}
-          />
-          <Tab
-            icon={settingsIcon}
-            label="Settings"
-            display="settings"
-            tab="settings"
-            current={currentTab}
-            setDisplay={setDisplay}
-          />
-        </div>
+        <Tile icon={nodesIcon} title="Node Count">
+          {formatNumber(nodeCount)}
+        </Tile>
+        {!this.props.hideSettingsNav && (
+          <div className="Header-tabs">
+            <Tab
+              icon={listIcon}
+              label="List"
+              display="list"
+              tab=""
+              current={currentTab}
+              setDisplay={setDisplay}
+            />
+            <Tab
+              icon={worldIcon}
+              label="Map"
+              display="map"
+              tab="map"
+              current={currentTab}
+              setDisplay={setDisplay}
+            />
+            <Tab
+              icon={statsIcon}
+              label="Stats"
+              display="stats"
+              tab="stats"
+              current={currentTab}
+              setDisplay={setDisplay}
+            />
+            <Tab
+              icon={settingsIcon}
+              label="Settings"
+              display="settings"
+              tab="settings"
+              current={currentTab}
+              setDisplay={setDisplay}
+            />
+          </div>
+        )}
       </div>
     );
   }
