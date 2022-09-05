@@ -15,24 +15,24 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import * as React from 'react';
-import {
-  formatNumber,
-  trimHash,
-  milliOrSecond,
-  secondsWithPrecision,
-} from '../../utils';
-import { Ago, Icon, PolkadotIcon } from '../';
-import { Node } from '../../state';
+// import {
+//   formatNumber,
+//   trimHash,
+//   milliOrSecond,
+//   secondsWithPrecision,
+// } from '../../utils';
+// import { Ago, Icon, PolkadotIcon } from '../';
+// import { Node } from '../../state';
 
-import nodeIcon from '../../icons/server.svg';
-import nodeValidatorIcon from '../../icons/shield.svg';
-import nodeTypeIcon from '../../icons/terminal.svg';
-import nodeLocationIcon from '../../icons/location.svg';
-import blockIcon from '../../icons/package.svg';
-import blockHashIcon from '../../icons/file-binary.svg';
-import blockTimeIcon from '../../icons/history.svg';
-import propagationTimeIcon from '../../icons/dashboard.svg';
-import lastTimeIcon from '../../icons/watch.svg';
+// import nodeIcon from '../../icons/server.svg';
+// import nodeValidatorIcon from '../../icons/shield.svg';
+// import nodeTypeIcon from '../../icons/terminal.svg';
+// import nodeLocationIcon from '../../icons/location.svg';
+// import blockIcon from '../../icons/package.svg';
+// import blockHashIcon from '../../icons/file-binary.svg';
+// import blockTimeIcon from '../../icons/history.svg';
+// import propagationTimeIcon from '../../icons/dashboard.svg';
+// import lastTimeIcon from '../../icons/watch.svg';
 
 import './Location.css';
 
@@ -40,9 +40,10 @@ export namespace Location {
   export type Quarter = 0 | 1 | 2 | 3;
 
   export interface Props {
-    node: Node;
+    // node: Node;
     position: Position;
-    focused: boolean;
+    // focused: boolean;
+    nodeCount: number;
   }
 
   export interface Position {
@@ -60,137 +61,137 @@ export class Location extends React.Component<Location.Props, Location.State> {
   public readonly state = { hover: false };
 
   public render() {
-    const { node, position, focused } = this.props;
+    const { position, nodeCount } = this.props;
     const { left, top, quarter } = position;
-    const { height, propagationTime, city } = node;
+    // const { height, propagationTime, city } = node;
 
-    if (!city) {
-      return null;
-    }
+    // if (!city) {
+    //   return null;
+    // }
 
-    let className = `Location Location-quarter${quarter}`;
+    const className = `Location Location-quarter${quarter}`;
 
-    if (focused) {
-      if (propagationTime != null) {
-        className += ' Location-synced';
-      } else if (height % 2 === 1) {
-        className += ' Location-odd';
-      }
-    } else {
-      className += ' Location-dimmed';
-    }
+    // if (focused) {
+    //   if (propagationTime != null) {
+    //     className += ' Location-synced';
+    //   } else if (height % 2 === 1) {
+    //     className += ' Location-odd';
+    //   }
+    // } else {
+    //   className += ' Location-dimmed';
+    // }
+
+    const size = nodeCount * 6; // 6px is default size for single node dot
 
     return (
       <div
         className={className}
-        style={{ left, top }}
-        onMouseOver={this.onMouseOver}
-        onMouseOut={this.onMouseOut}
+        style={{ left, top, width: size, height: size }}
       >
-        {this.state.hover ? this.renderDetails() : null}
+        {/* {this.state.hover ? this.renderDetails() : null} */}
         <div className="Location-ping" />
       </div>
     );
   }
 
-  private renderDetails() {
-    const {
-      name,
-      implementation,
-      version,
-      validator,
-      height,
-      hash,
-      blockTime,
-      blockTimestamp,
-      propagationTime,
-      city,
-    } = this.props.node;
+  // private renderDetails() {
+  //   const {
+  //     name,
+  //     implementation,
+  //     version,
+  //     validator,
+  //     height,
+  //     hash,
+  //     blockTime,
+  //     blockTimestamp,
+  //     propagationTime,
+  //     city,
+  //   } = this.props.node;
 
-    let validatorRow = <div />;
+  //   let validatorRow = <div />;
 
-    if (validator) {
-      validatorRow = (
-        <tr>
-          <td>
-            <Icon src={nodeValidatorIcon} />
-          </td>
-          <td colSpan={5}>
-            {trimHash(validator, 30)}
-            <span className="Location-validator">
-              <PolkadotIcon account={validator} size={16} />
-            </span>
-          </td>
-        </tr>
-      );
-    }
+  //   if (validator) {
+  //     validatorRow = (
+  //       <tr>
+  //         <td>
+  //           <Icon src={nodeValidatorIcon} />
+  //         </td>
+  //         <td colSpan={5}>
+  //           {trimHash(validator, 30)}
+  //           <span className="Location-validator">
+  //             <PolkadotIcon account={validator} size={16} />
+  //           </span>
+  //         </td>
+  //       </tr>
+  //     );
+  //   }
 
-    return (
-      <table className="Location-details Location-details">
-        <tbody>
-          <tr>
-            <td title="Node">
-              <Icon src={nodeIcon} />
-            </td>
-            <td colSpan={5}>{name}</td>
-          </tr>
-          {validatorRow}
-          <tr>
-            <td title="Implementation">
-              <Icon src={nodeTypeIcon} />
-            </td>
-            <td colSpan={5}>
-              {implementation} v{version}
-            </td>
-          </tr>
-          <tr>
-            <td title="Location">
-              <Icon src={nodeLocationIcon} />
-            </td>
-            <td colSpan={5}>{city}</td>
-          </tr>
-          <tr>
-            <td title="Block">
-              <Icon src={blockIcon} />
-            </td>
-            <td colSpan={5}>#{formatNumber(height)}</td>
-          </tr>
-          <tr>
-            <td title="Block Hash">
-              <Icon src={blockHashIcon} />
-            </td>
-            <td colSpan={5}>{trimHash(hash, 20)}</td>
-          </tr>
-          <tr>
-            <td title="Block Time">
-              <Icon src={blockTimeIcon} />
-            </td>
-            <td style={{ width: 80 }}>
-              {secondsWithPrecision(blockTime / 1000)}
-            </td>
-            <td title="Block Propagation Time">
-              <Icon src={propagationTimeIcon} />
-            </td>
-            <td style={{ width: 58 }}>
-              {propagationTime == null ? '∞' : milliOrSecond(propagationTime)}
-            </td>
-            <td title="Last Block Time">
-              <Icon src={lastTimeIcon} />
-            </td>
-            <td style={{ minWidth: 82 }}>
-              <Ago when={blockTimestamp} />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    );
-  }
+  //   return (
+  //     <table className="Location-details Location-details">
+  //       <tbody>
+  //         <tr>
+  //           <td title="Node">
+  //             <Icon src={nodeIcon} />
+  //           </td>
+  //           <td colSpan={5}>{name}</td>
+  //         </tr>
+  //         {validatorRow}
+  //         <tr>
+  //           <td title="Implementation">
+  //             <Icon src={nodeTypeIcon} />
+  //           </td>
+  //           <td colSpan={5}>
+  //             {implementation} v{version}
+  //           </td>
+  //         </tr>
+  //         <tr>
+  //           <td title="Location">
+  //             <Icon src={nodeLocationIcon} />
+  //           </td>
+  //           <td colSpan={5}>{city}</td>
+  //         </tr>
+  //         <tr>
+  //           <td title="Block">
+  //             <Icon src={blockIcon} />
+  //           </td>
+  //           <td colSpan={5}>#{formatNumber(height)}</td>
+  //         </tr>
+  //         <tr>
+  //           <td title="Block Hash">
+  //             <Icon src={blockHashIcon} />
+  //           </td>
+  //           <td colSpan={5}>{trimHash(hash, 20)}</td>
+  //         </tr>
+  //         <tr>
+  //           <td title="Block Time">
+  //             <Icon src={blockTimeIcon} />
+  //           </td>
+  //           <td style={{ width: 80 }}>
+  //             {secondsWithPrecision(blockTime / 1000)}
+  //           </td>
+  //           <td title="Block Propagation Time">
+  //             <Icon src={propagationTimeIcon} />
+  //           </td>
+  //           <td style={{ width: 58 }}>
+  //             {propagationTime == null ? '∞' : milliOrSecond(propagationTime)}
+  //           </td>
+  //           <td title="Last Block Time">
+  //             <Icon src={lastTimeIcon} />
+  //           </td>
+  //           <td style={{ minWidth: 82 }}>
+  //             <Ago when={blockTimestamp} />
+  //           </td>
+  //         </tr>
+  //       </tbody>
+  //     </table>
+  //   );
+  // }
 
-  private onMouseOver = () => {
-    this.setState({ hover: true });
-  };
+  // private onMouseOver = () => {
+  //   this.setState({ hover: true });
+  // };
 
-  private onMouseOut = () => {
-    this.setState({ hover: false });
-  };
+  // private onMouseOut = () => {
+  //   this.setState({ hover: false });
+  // };
 }

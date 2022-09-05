@@ -39,6 +39,13 @@ export namespace Map {
     top: number;
     left: number;
   }
+
+  type LocationItem = {
+    nodeCount: number;
+    position: Location.Position;
+  };
+
+  export type Locations = Record<string, LocationItem>;
 }
 
 export class Map extends React.Component<Map.Props, Map.State> {
@@ -60,33 +67,52 @@ export class Map extends React.Component<Map.Props, Map.State> {
     window.removeEventListener('resize', this.onResize);
   }
 
+  private getNodeLocations(nodes: Node[]): Map.Locations {
+    return nodes.reduce((acc, { city, lat, lon }) => {
+      // Skip nodes with unknown location
+      if (city && lat && lon) {
+        if (acc[city]) {
+          acc[city].nodeCount += 1;
+        } else {
+          acc[city] = {
+            nodeCount: 1,
+            position: this.pixelPosition(lat, lon),
+          };
+        }
+      }
+      return acc;
+    }, {});
+  }
+
   public render() {
     const { appState } = this.props;
-    const { filter } = this.state;
-    let nodes = appState.nodes.getList();
-    nodes = nodes.length <= 1300 ? nodes : nodes.slice(0, 1300);
+    // const { filter } = this.state;
+    const nodes = appState.nodes.getList();
+    const locations = this.getNodeLocations(nodes);
+    // nodes = nodes.length <= 1300 ? nodes : nodes.slice(0, 1300);
 
     return (
       <React.Fragment>
         <div className="Map">
-          {nodes.map((node) => {
-            const { lat, lon } = node;
+          {Object.values(locations).map(({ position, nodeCount }, i) => {
+            // const { lat, lon } = node;
 
-            const focused = filter == null || filter(node);
+            // const focused = filter == null || filter(node);
 
-            if (lat == null || lon == null) {
-              // Skip nodes with unknown location
-              return null;
-            }
+            // if (lat == null || lon == null) {
+            //   // Skip nodes with unknown location
+            //   return null;
+            // }
 
-            const position = this.pixelPosition(lat, lon);
+            // const position = this.pixelPosition(lat, lon);
 
             return (
               <Location
-                key={node.id}
+                key={i}
                 position={position}
-                focused={focused}
-                node={node}
+                // focused={focused}
+                // node={node}
+                nodeCount={nodeCount}
               />
             );
           })}
