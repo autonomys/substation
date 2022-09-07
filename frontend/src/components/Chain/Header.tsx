@@ -52,7 +52,8 @@ export class Header extends React.Component<Header.Props, {}> {
       this.props.finalized !== nextProps.finalized ||
       this.props.blockTimestamp !== nextProps.blockTimestamp ||
       this.props.blockAverage !== nextProps.blockAverage ||
-      this.props.currentTab !== nextProps.currentTab
+      this.props.currentTab !== nextProps.currentTab ||
+      this.props.nodeCount !== nextProps.nodeCount
     );
   }
 
