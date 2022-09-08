@@ -66,7 +66,13 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
 
   public render() {
     const { appState, subscribedData } = this.props;
-    const { best, finalized, blockTimestamp, blockAverage } = appState;
+    const {
+      best,
+      finalized,
+      blockTimestamp,
+      blockAverage,
+      spacePledged,
+    } = appState;
     const { display: currentTab } = this.state;
 
     return (
@@ -80,6 +86,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
           currentTab={currentTab}
           setDisplay={this.setDisplay}
           hideSettingsNav={this.props.disableNodeViews}
+          spacePledged={spacePledged}
         />
         <div className="Chain-content-container">
           <div className="Chain-content">{this.renderContent()}</div>

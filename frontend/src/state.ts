@@ -280,6 +280,7 @@ export interface State {
   sortBy: Readonly<Maybe<number>>;
   selectedColumns: Column[];
   chainStats: Maybe<Types.ChainStats>;
+  spacePledged: Readonly<number>;
 }
 
 export type Update = <K extends keyof State>(

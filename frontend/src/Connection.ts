@@ -14,22 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+import { ApiPromise, WsProvider } from "@polkadot/api";
 import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from './common';
 import { State, Update, Node, ChainData, PINNED_CHAINS } from './state';
 import { PersistentSet } from './persist';
-import { getHashData, setHashData } from './utils';
+import { getHashData, setHashData, solutionRangeToSpace } from './utils';
 import { ACTIONS } from './common/feed';
-import {
-  Column,
-  LocationColumn,
-  PeersColumn,
-  TxsColumn,
-  FinalizedBlockColumn,
-  FinalizedHashColumn,
-  UploadColumn,
-  DownloadColumn,
-  StateCacheColumn,
-} from './components/List';
+import { Column } from './components/List';
 
 const CONNECTION_TIMEOUT_BASE = (1000 * 5) as Types.Milliseconds; // 5 seconds
 const CONNECTION_TIMEOUT_MAX = (1000 * 60 * 5) as Types.Milliseconds; // 5 minutes
@@ -46,14 +37,17 @@ export class Connection {
     pins: PersistentSet<Types.NodeName>,
     appState: Readonly<State>,
     appUpdate: Update,
-    disableNodes?: boolean
+    disableNodes?: boolean,
   ): Promise<Connection> {
+    const provider = new WsProvider('wss://eu-0.gemini-2a.subspace.network/ws');
+    const api = await ApiPromise.create({ provider });
     return new Connection(
       await Connection.socket(),
       appState,
       appUpdate,
       pins,
-      disableNodes
+      api,
+      disableNodes,
     );
   }
 
@@ -137,7 +131,8 @@ export class Connection {
     private readonly appState: Readonly<State>,
     private readonly appUpdate: Update,
     private readonly pins: PersistentSet<Types.NodeName>,
-    private readonly disableNodes?: boolean
+    private readonly api: ApiPromise,
+    private readonly disableNodes?: boolean,
   ) {
     this.bindSocket();
   }
@@ -158,7 +153,7 @@ export class Connection {
     this.socket.send(`subscribe:${chain}`);
   }
 
-  private handleMessages = (messages: FeedMessage.Message[]) => {
+  private handleMessages = async (messages: FeedMessage.Message[]) => {
     this.messageTimeout?.reset();
     const { nodes, chains, sortBy, selectedColumns } = this.appState;
     const nodesStateRef = nodes.ref;
@@ -185,7 +180,17 @@ export class Connection {
 
           nodes.mutEachAndSort((node) => node.newBestBlock());
 
-          this.appUpdate({ best, blockTimestamp, blockAverage });
+          const blockHash = await this.api.rpc.chain.getBlockHash();
+          const apiAt = await this.api.at(blockHash);
+          const consensusSolutionRange = (await apiAt.query.subspace.solutionRanges as any).current.toBigInt();
+          const spacePledged = solutionRangeToSpace(consensusSolutionRange);
+
+          this.appUpdate({
+            best,
+            blockTimestamp,
+            blockAverage,
+            spacePledged,
+          });
 
           break;
         }

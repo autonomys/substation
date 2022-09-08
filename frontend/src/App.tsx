@@ -115,6 +115,7 @@ export default class App extends React.Component<{}, {}> {
       selectedColumns: this.selectedColumns(this.settings.raw()),
       tab,
       chainStats: null,
+      spacePledged: 0,
     });
     this.appState = this.appUpdate({});
 
@@ -125,7 +126,7 @@ export default class App extends React.Component<{}, {}> {
       this.pins,
       this.appState,
       this.appUpdate,
-      DISABLE_NODES
+      DISABLE_NODES,
     );
 
     setInterval(() => (this.chainsCache = []), 10000); // Wipe sorted chains cache every 10 seconds

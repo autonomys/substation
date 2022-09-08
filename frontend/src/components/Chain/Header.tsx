@@ -29,6 +29,7 @@ import worldIcon from '../../icons/location.svg';
 import settingsIcon from '../../icons/settings.svg';
 import nodesIcon from '../../icons/blockchain-icon.svg';
 import statsIcon from '../../icons/graph.svg';
+import databaseIcon from '../../icons/database.svg';
 
 import './Header.css';
 
@@ -42,6 +43,7 @@ export namespace Header {
     currentTab: Chain.Display;
     setDisplay: (display: Chain.Display) => void;
     hideSettingsNav?: boolean;
+    spacePledged: number;
   }
 }
 
@@ -53,7 +55,8 @@ export class Header extends React.Component<Header.Props, {}> {
       this.props.blockTimestamp !== nextProps.blockTimestamp ||
       this.props.blockAverage !== nextProps.blockAverage ||
       this.props.currentTab !== nextProps.currentTab ||
-      this.props.nodeCount !== nextProps.nodeCount
+      this.props.nodeCount !== nextProps.nodeCount ||
+      this.props.spacePledged !== nextProps.spacePledged
     );
   }
 
@@ -64,6 +67,7 @@ export class Header extends React.Component<Header.Props, {}> {
       nodeCount,
       blockTimestamp,
       blockAverage,
+      spacePledged,
     } = this.props;
     const { currentTab, setDisplay } = this.props;
 
@@ -85,6 +89,9 @@ export class Header extends React.Component<Header.Props, {}> {
         </Tile>
         <Tile icon={nodesIcon} title="Node Count">
           {formatNumber(nodeCount)}
+        </Tile>
+        <Tile icon={databaseIcon} title="Space Pledged">
+          {formatNumber(spacePledged)}
         </Tile>
         {!this.props.hideSettingsNav && (
           <div className="Header-tabs">
