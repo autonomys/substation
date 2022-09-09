@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import { ApiPromise, WsProvider } from "@polkadot/api";
+import { ApiPromise, WsProvider } from '@polkadot/api';
 import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from './common';
 import { State, Update, Node, ChainData, PINNED_CHAINS } from './state';
 import { PersistentSet } from './persist';
@@ -37,7 +37,7 @@ export class Connection {
     pins: PersistentSet<Types.NodeName>,
     appState: Readonly<State>,
     appUpdate: Update,
-    disableNodes?: boolean,
+    disableNodes?: boolean
   ): Promise<Connection> {
     const provider = new WsProvider('wss://eu-0.gemini-2a.subspace.network/ws');
     const api = await ApiPromise.create({ provider });
@@ -47,7 +47,7 @@ export class Connection {
       appUpdate,
       pins,
       api,
-      disableNodes,
+      disableNodes
     );
   }
 
@@ -69,7 +69,7 @@ export class Connection {
       return `wss://${window.location.hostname}/feed/`;
     }
 
-    return `ws://127.0.0.1:8000/feed`;
+    return 'ws://127.0.0.1:8000/feed';
   }
 
   private static async socket(): Promise<WebSocket> {
@@ -90,7 +90,7 @@ export class Connection {
   }
 
   private static async trySocket(): Promise<Maybe<WebSocket>> {
-    return new Promise<Maybe<WebSocket>>((resolve, _) => {
+    return new Promise<Maybe<WebSocket>>((resolve) => {
       function clean() {
         socket.removeEventListener('open', onSuccess);
         socket.removeEventListener('close', onFailure);
@@ -132,7 +132,7 @@ export class Connection {
     private readonly appUpdate: Update,
     private readonly pins: PersistentSet<Types.NodeName>,
     private readonly api: ApiPromise,
-    private readonly disableNodes?: boolean,
+    private readonly disableNodes?: boolean
   ) {
     this.bindSocket();
   }
@@ -182,7 +182,9 @@ export class Connection {
 
           const blockHash = await this.api.rpc.chain.getBlockHash();
           const apiAt = await this.api.at(blockHash);
-          const consensusSolutionRange = (await apiAt.query.subspace.solutionRanges as any).current.toBigInt();
+          const consensusSolutionRange = (
+            (await apiAt.query.subspace.solutionRanges) as any
+          ).current.toBigInt();
           const spacePledged = solutionRangeToSpace(consensusSolutionRange);
 
           this.appUpdate({
@@ -497,7 +499,8 @@ export class Connection {
     let data: FeedMessage.Data;
 
     if (typeof event.data === 'string') {
-      data = (event.data as any) as FeedMessage.Data;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      data = event.data as any as FeedMessage.Data;
     } else {
       const u8aData = new Uint8Array(event.data);
 
@@ -508,7 +511,8 @@ export class Connection {
 
       const str = Connection.utf8decoder.decode(event.data);
 
-      data = (str as any) as FeedMessage.Data;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      data = str as any as FeedMessage.Data;
     }
 
     this.handleMessages(FeedMessage.deserialize(data));
