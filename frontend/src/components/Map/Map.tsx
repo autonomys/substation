@@ -18,7 +18,7 @@ import * as React from 'react';
 import { Types, Maybe } from '../../common';
 import { Filter } from '../';
 import { State as AppState, Node } from '../../state';
-import { Location } from './';
+import { Location, LocationQuarter, LocationPosition } from './';
 import { viewport } from '../../utils';
 
 const MAP_RATIO = 800 / 350;
@@ -27,29 +27,27 @@ const HEADER = 148;
 
 import './Map.css';
 
-export namespace Map {
-  export interface Props {
-    appState: Readonly<AppState>;
-  }
-
-  export interface State {
-    filter: Maybe<(node: Node) => boolean>;
-    width: number;
-    height: number;
-    top: number;
-    left: number;
-  }
-
-  type LocationItem = {
-    nodeCount: number;
-    position: Location.Position;
-  };
-
-  export type Locations = Record<string, LocationItem>;
+interface MapProps {
+  appState: Readonly<AppState>;
 }
 
-export class Map extends React.Component<Map.Props, Map.State> {
-  public state: Map.State = {
+interface MapState {
+  filter: Maybe<(node: Node) => boolean>;
+  width: number;
+  height: number;
+  top: number;
+  left: number;
+}
+
+type LocationItem = {
+  nodeCount: number;
+  position: LocationPosition;
+};
+
+type Locations = Record<string, LocationItem>;
+
+export class Map extends React.Component<MapProps, MapState> {
+  public state: MapState = {
     filter: null,
     width: 0,
     height: 0,
@@ -67,7 +65,7 @@ export class Map extends React.Component<Map.Props, Map.State> {
     window.removeEventListener('resize', this.onResize);
   }
 
-  private getNodeLocations(nodes: Node[]): Map.Locations {
+  private getNodeLocations(nodes: Node[]): Locations {
     return nodes.reduce((acc, { city, lat, lon }) => {
       // Skip nodes with unknown location
       if (city && lat && lon) {
@@ -111,7 +109,7 @@ export class Map extends React.Component<Map.Props, Map.State> {
   private pixelPosition(
     lat: Types.Latitude,
     lon: Types.Longitude
-  ): Location.Position {
+  ): LocationPosition {
     const { state } = this;
 
     // Longitude ranges -180 (west) to +180 (east)
@@ -121,14 +119,14 @@ export class Map extends React.Component<Map.Props, Map.State> {
       ((90 - lat) / 180) * state.height * MAP_HEIGHT_ADJUST + state.top
     );
 
-    let quarter: Location.Quarter = 0;
+    let quarter: LocationQuarter = 0;
 
     if (lon > 0) {
-      quarter = (quarter | 1) as Location.Quarter;
+      quarter = (quarter | 1) as LocationQuarter;
     }
 
     if (lat < 0) {
-      quarter = (quarter | 2) as Location.Quarter;
+      quarter = (quarter | 2) as LocationQuarter;
     }
 
     return { left, top, quarter };

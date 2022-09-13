@@ -17,7 +17,7 @@
 import * as React from 'react';
 import { Types, Maybe } from '../../common';
 import { formatNumber, secondsWithPrecision } from '../../utils';
-import { Tab, Chain } from './';
+import { Tab, ChainDisplay } from './';
 import { Tile, Ago } from '../';
 
 import blockIcon from '../../icons/cube.svg';
@@ -29,31 +29,47 @@ import worldIcon from '../../icons/location.svg';
 import settingsIcon from '../../icons/settings.svg';
 import nodesIcon from '../../icons/blockchain-icon.svg';
 import statsIcon from '../../icons/graph.svg';
+import databaseIcon from '../../icons/database.svg';
 
 import './Header.css';
 
-export namespace Header {
-  export interface Props {
-    best: Types.BlockNumber;
-    finalized: Types.BlockNumber;
-    nodeCount: number;
-    blockTimestamp: Types.Timestamp;
-    blockAverage: Maybe<Types.Milliseconds>;
-    currentTab: Chain.Display;
-    setDisplay: (display: Chain.Display) => void;
-    hideSettingsNav?: boolean;
-  }
+interface HeaderProps {
+  best: Types.BlockNumber;
+  finalized: Types.BlockNumber;
+  nodeCount: number;
+  blockTimestamp: Types.Timestamp;
+  blockAverage: Maybe<Types.Milliseconds>;
+  currentTab: ChainDisplay;
+  setDisplay: (display: ChainDisplay) => void;
+  hideSettingsNav?: boolean;
+  spacePledged: Maybe<number>;
 }
 
-export class Header extends React.Component<Header.Props, {}> {
-  public shouldComponentUpdate(nextProps: Header.Props) {
+const TB = 1024 * 1024 * 1024 * 1024;
+const GB = 1024 * 1024 * 1024;
+const MB = 1024 * 1024;
+
+export class Header extends React.Component<HeaderProps> {
+  public shouldComponentUpdate(nextProps: HeaderProps) {
     return (
       this.props.best !== nextProps.best ||
       this.props.finalized !== nextProps.finalized ||
       this.props.blockTimestamp !== nextProps.blockTimestamp ||
       this.props.blockAverage !== nextProps.blockAverage ||
-      this.props.currentTab !== nextProps.currentTab
+      this.props.currentTab !== nextProps.currentTab ||
+      this.props.nodeCount !== nextProps.nodeCount ||
+      this.props.spacePledged !== nextProps.spacePledged
     );
+  }
+
+  private formatSpacePledged(value: number) {
+    if (value >= TB) {
+      return `${Math.round((value * 100) / TB) / 100} TB`;
+    } else if (value >= GB) {
+      return `${Math.round((value * 100) / GB) / 100} GB`;
+    } else {
+      return `${Math.round((value * 100) / MB) / 100} MB`;
+    }
   }
 
   public render() {
@@ -63,6 +79,7 @@ export class Header extends React.Component<Header.Props, {}> {
       nodeCount,
       blockTimestamp,
       blockAverage,
+      spacePledged,
     } = this.props;
     const { currentTab, setDisplay } = this.props;
 
@@ -85,6 +102,11 @@ export class Header extends React.Component<Header.Props, {}> {
         <Tile icon={nodesIcon} title="Node Count">
           {formatNumber(nodeCount)}
         </Tile>
+        {spacePledged && (
+          <Tile icon={databaseIcon} title="Space Pledged">
+            {this.formatSpacePledged(spacePledged)}
+          </Tile>
+        )}
         {!this.props.hideSettingsNav && (
           <div className="Header-tabs">
             <Tab

@@ -27,25 +27,25 @@ import {
   Node,
   ChainData,
   comparePinnedChains,
+  StateSettings,
 } from './state';
 import { getHashData } from './utils';
-import stable from 'stable';
 
 import './App.css';
 
 const DISABLE_NODES = false;
 
-export default class App extends React.Component<{}, {}> {
+export default class App extends React.Component {
   private chainsCache: ChainData[] = [];
   // Custom state for finer control over updates
   private readonly appState: Readonly<State>;
   private readonly appUpdate: Update;
-  private readonly settings: PersistentObject<State.Settings>;
+  private readonly settings: PersistentObject<StateSettings>;
   private readonly pins: PersistentSet<Types.NodeName>;
   private readonly sortBy: Persistent<Maybe<number>>;
   private readonly connection: Promise<Connection>;
 
-  constructor(props: {}) {
+  constructor(props: Record<string, unknown>) {
     super(props);
 
     this.settings = new PersistentObject(
@@ -115,6 +115,7 @@ export default class App extends React.Component<{}, {}> {
       selectedColumns: this.selectedColumns(this.settings.raw()),
       tab,
       chainStats: null,
+      spacePledged: 0,
     });
     this.appState = this.appUpdate({});
 
@@ -230,8 +231,7 @@ export default class App extends React.Component<{}, {}> {
       return this.chainsCache;
     }
 
-    this.chainsCache = stable.inplace(
-      Array.from(this.appState.chains.values()),
+    this.chainsCache = Array.from(this.appState.chains.values()).sort(
       (a, b) => {
         const pinned = comparePinnedChains(a.genesisHash, b.genesisHash);
 
@@ -246,7 +246,7 @@ export default class App extends React.Component<{}, {}> {
     return this.chainsCache;
   }
 
-  private selectedColumns(settings: State.Settings): Column[] {
+  private selectedColumns(settings: StateSettings): Column[] {
     return Row.columns.filter(
       ({ setting }) => setting == null || settings[setting]
     );

@@ -21,27 +21,25 @@ import nodeLocationIcon from '../../icons/location.svg';
 
 import './Location.css';
 
-export namespace Location {
-  export type Quarter = 0 | 1 | 2 | 3;
+export type LocationQuarter = 0 | 1 | 2 | 3;
 
-  export interface Props {
-    position: Position;
-    nodeCount: number;
-    city: string;
-  }
-
-  export interface Position {
-    left: number;
-    top: number;
-    quarter: Quarter;
-  }
-
-  export interface State {
-    hover: boolean;
-  }
+interface LocationProps {
+  position: LocationPosition;
+  nodeCount: number;
+  city: string;
 }
 
-export class Location extends React.Component<Location.Props, Location.State> {
+export interface LocationPosition {
+  left: number;
+  top: number;
+  quarter: LocationQuarter;
+}
+
+interface LocationState {
+  hover: boolean;
+}
+
+export class Location extends React.Component<LocationProps, LocationState> {
   public readonly state = { hover: false };
 
   public render() {

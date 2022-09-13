@@ -127,3 +127,14 @@ export function getSVGShadowRoot(): SVGSVGElement {
 
   return root;
 }
+
+export function solutionRangeToSpace(solutionRange: bigint): number {
+  const MAX_U64 = BigInt(2) ** BigInt(64) - BigInt(1);
+  const SLOT_PROBABILITY = [BigInt(1), BigInt(6)];
+  const PIECE_SIZE = BigInt(4096);
+
+  return Number(
+    ((MAX_U64 * SLOT_PROBABILITY[0]) / SLOT_PROBABILITY[1] / solutionRange) *
+      PIECE_SIZE
+  );
+}

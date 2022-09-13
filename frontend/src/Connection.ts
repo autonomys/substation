@@ -14,22 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+import { ApiPromise, WsProvider } from '@polkadot/api';
 import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from './common';
 import { State, Update, Node, ChainData, PINNED_CHAINS } from './state';
 import { PersistentSet } from './persist';
-import { getHashData, setHashData } from './utils';
+import { getHashData, setHashData, solutionRangeToSpace } from './utils';
 import { ACTIONS } from './common/feed';
-import {
-  Column,
-  LocationColumn,
-  PeersColumn,
-  TxsColumn,
-  FinalizedBlockColumn,
-  FinalizedHashColumn,
-  UploadColumn,
-  DownloadColumn,
-  StateCacheColumn,
-} from './components/List';
 
 const CONNECTION_TIMEOUT_BASE = (1000 * 5) as Types.Milliseconds; // 5 seconds
 const CONNECTION_TIMEOUT_MAX = (1000 * 60 * 5) as Types.Milliseconds; // 5 minutes
@@ -48,11 +38,15 @@ export class Connection {
     appUpdate: Update,
     disableNodes?: boolean
   ): Promise<Connection> {
+    const rpcUrl = 'wss://eu-0.gemini-2a.subspace.network/ws';
+    const provider = new WsProvider(rpcUrl);
+    const api = await ApiPromise.create({ provider });
     return new Connection(
       await Connection.socket(),
       appState,
       appUpdate,
       pins,
+      api,
       disableNodes
     );
   }
@@ -75,7 +69,7 @@ export class Connection {
       return `wss://${window.location.hostname}/feed/`;
     }
 
-    return `ws://127.0.0.1:8000/feed`;
+    return 'ws://127.0.0.1:8000/feed';
   }
 
   private static async socket(): Promise<WebSocket> {
@@ -96,7 +90,7 @@ export class Connection {
   }
 
   private static async trySocket(): Promise<Maybe<WebSocket>> {
-    return new Promise<Maybe<WebSocket>>((resolve, _) => {
+    return new Promise<Maybe<WebSocket>>((resolve) => {
       function clean() {
         socket.removeEventListener('open', onSuccess);
         socket.removeEventListener('close', onFailure);
@@ -137,6 +131,7 @@ export class Connection {
     private readonly appState: Readonly<State>,
     private readonly appUpdate: Update,
     private readonly pins: PersistentSet<Types.NodeName>,
+    private readonly api: ApiPromise,
     private readonly disableNodes?: boolean
   ) {
     this.bindSocket();
@@ -158,17 +153,10 @@ export class Connection {
     this.socket.send(`subscribe:${chain}`);
   }
 
-  private handleMessages = (messages: FeedMessage.Message[]) => {
+  private handleMessages = async (messages: FeedMessage.Message[]) => {
     this.messageTimeout?.reset();
-    const { nodes, chains, sortBy, selectedColumns } = this.appState;
+    const { nodes, chains } = this.appState;
     const nodesStateRef = nodes.ref;
-
-    let sortByColumn: Maybe<Column> = null;
-
-    if (sortBy != null) {
-      sortByColumn =
-        sortBy < 0 ? selectedColumns[~sortBy] : selectedColumns[sortBy];
-    }
 
     for (const message of messages) {
       switch (message.action) {
@@ -185,7 +173,19 @@ export class Connection {
 
           nodes.mutEachAndSort((node) => node.newBestBlock());
 
-          this.appUpdate({ best, blockTimestamp, blockAverage });
+          const blockHash = await this.api.rpc.chain.getBlockHash();
+          const apiAt = await this.api.at(blockHash);
+          const { current } =
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (await apiAt.query.subspace.solutionRanges()) as any;
+          const spacePledged = solutionRangeToSpace(current.toBigInt());
+
+          this.appUpdate({
+            best,
+            blockTimestamp,
+            blockAverage,
+            spacePledged,
+          });
 
           break;
         }
@@ -492,7 +492,8 @@ export class Connection {
     let data: FeedMessage.Data;
 
     if (typeof event.data === 'string') {
-      data = (event.data as any) as FeedMessage.Data;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      data = event.data as any as FeedMessage.Data;
     } else {
       const u8aData = new Uint8Array(event.data);
 
@@ -503,7 +504,8 @@ export class Connection {
 
       const str = Connection.utf8decoder.decode(event.data);
 
-      data = (str as any) as FeedMessage.Data;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      data = str as any as FeedMessage.Data;
     }
 
     this.handleMessages(FeedMessage.deserialize(data));
