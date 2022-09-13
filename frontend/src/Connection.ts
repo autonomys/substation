@@ -20,7 +20,6 @@ import { State, Update, Node, ChainData, PINNED_CHAINS } from './state';
 import { PersistentSet } from './persist';
 import { getHashData, setHashData, solutionRangeToSpace } from './utils';
 import { ACTIONS } from './common/feed';
-import { Column } from './components/List';
 
 const CONNECTION_TIMEOUT_BASE = (1000 * 5) as Types.Milliseconds; // 5 seconds
 const CONNECTION_TIMEOUT_MAX = (1000 * 60 * 5) as Types.Milliseconds; // 5 minutes
@@ -155,15 +154,8 @@ export class Connection {
 
   private handleMessages = async (messages: FeedMessage.Message[]) => {
     this.messageTimeout?.reset();
-    const { nodes, chains, sortBy, selectedColumns } = this.appState;
+    const { nodes, chains } = this.appState;
     const nodesStateRef = nodes.ref;
-
-    let sortByColumn: Maybe<Column> = null;
-
-    if (sortBy != null) {
-      sortByColumn =
-        sortBy < 0 ? selectedColumns[~sortBy] : selectedColumns[sortBy];
-    }
 
     for (const message of messages) {
       switch (message.action) {
@@ -182,10 +174,10 @@ export class Connection {
 
           const blockHash = await this.api.rpc.chain.getBlockHash();
           const apiAt = await this.api.at(blockHash);
-          const consensusSolutionRange = (
-            (await apiAt.query.subspace.solutionRanges) as any
-          ).current.toBigInt();
-          const spacePledged = solutionRangeToSpace(consensusSolutionRange);
+          const { current } =
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (await apiAt.query.subspace.solutionRanges()) as any;
+          const spacePledged = solutionRangeToSpace(current.toBigInt());
 
           this.appUpdate({
             best,

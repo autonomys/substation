@@ -95,8 +95,7 @@ export class Chain extends React.Component<ChainProps, ChainState> {
 
   private renderContent() {
     const { display } = this.state;
-    const { appState, appUpdate, connection, pins, sortBy, disableNodeViews } =
-      this.props;
+    const { appState, appUpdate, pins, sortBy, disableNodeViews } = this.props;
 
     if (display === 'stats' || disableNodeViews) {
       return <Stats appState={appState} />;

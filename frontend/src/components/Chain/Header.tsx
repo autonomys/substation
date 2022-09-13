@@ -45,6 +45,10 @@ interface HeaderProps {
   spacePledged: number;
 }
 
+const TB = 1024 * 1024 * 1024 * 1024;
+const GB = 1024 * 1024 * 1024;
+const MB = 1024 * 1024;
+
 export class Header extends React.Component<HeaderProps> {
   public shouldComponentUpdate(nextProps: HeaderProps) {
     return (
@@ -56,6 +60,16 @@ export class Header extends React.Component<HeaderProps> {
       this.props.nodeCount !== nextProps.nodeCount ||
       this.props.spacePledged !== nextProps.spacePledged
     );
+  }
+
+  private formatSpacePledged(value: number) {
+    if (value >= TB) {
+      return `${Math.round((value * 100) / TB) / 100} TB`;
+    } else if (value >= GB) {
+      return `${Math.round((value * 100) / GB) / 100} GB`;
+    } else {
+      return `${Math.round((value * 100) / MB) / 100} MB`;
+    }
   }
 
   public render() {
@@ -89,7 +103,7 @@ export class Header extends React.Component<HeaderProps> {
           {formatNumber(nodeCount)}
         </Tile>
         <Tile icon={databaseIcon} title="Space Pledged">
-          {formatNumber(spacePledged)}
+          {this.formatSpacePledged(spacePledged)}
         </Tile>
         {!this.props.hideSettingsNav && (
           <div className="Header-tabs">
