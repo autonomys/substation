@@ -42,7 +42,7 @@ interface HeaderProps {
   currentTab: ChainDisplay;
   setDisplay: (display: ChainDisplay) => void;
   hideSettingsNav?: boolean;
-  spacePledged: number;
+  spacePledged: Maybe<number>;
 }
 
 const TB = 1024 * 1024 * 1024 * 1024;
@@ -102,9 +102,11 @@ export class Header extends React.Component<HeaderProps> {
         <Tile icon={nodesIcon} title="Node Count">
           {formatNumber(nodeCount)}
         </Tile>
-        <Tile icon={databaseIcon} title="Space Pledged">
-          {this.formatSpacePledged(spacePledged)}
-        </Tile>
+        {spacePledged && (
+          <Tile icon={databaseIcon} title="Space Pledged">
+            {this.formatSpacePledged(spacePledged)}
+          </Tile>
+        )}
         {!this.props.hideSettingsNav && (
           <div className="Header-tabs">
             <Tab

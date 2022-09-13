@@ -84,7 +84,7 @@ export class Chain extends React.Component<ChainProps, ChainState> {
           currentTab={currentTab}
           setDisplay={this.setDisplay}
           hideSettingsNav={this.props.disableNodeViews}
-          spacePledged={spacePledged}
+          spacePledged={subscribedData?.label === 'Subspace Gemini 2a' ? spacePledged : undefined}
         />
         <div className="Chain-content-container">
           <div className="Chain-content">{this.renderContent()}</div>

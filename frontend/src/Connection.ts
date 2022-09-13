@@ -38,7 +38,8 @@ export class Connection {
     appUpdate: Update,
     disableNodes?: boolean
   ): Promise<Connection> {
-    const provider = new WsProvider('wss://eu-0.gemini-2a.subspace.network/ws');
+    const rpcUrl = 'wss://eu-0.gemini-2a.subspace.network/ws';
+    const provider = new WsProvider(rpcUrl);
     const api = await ApiPromise.create({ provider });
     return new Connection(
       await Connection.socket(),
