@@ -86,33 +86,19 @@ export class Map extends React.Component<Map.Props, Map.State> {
 
   public render() {
     const { appState } = this.props;
-    // const { filter } = this.state;
     const nodes = appState.nodes.getList();
     const locations = this.getNodeLocations(nodes);
-    // nodes = nodes.length <= 1300 ? nodes : nodes.slice(0, 1300);
 
     return (
       <React.Fragment>
         <div className="Map">
-          {Object.values(locations).map(({ position, nodeCount }, i) => {
-            // const { lat, lon } = node;
-
-            // const focused = filter == null || filter(node);
-
-            // if (lat == null || lon == null) {
-            //   // Skip nodes with unknown location
-            //   return null;
-            // }
-
-            // const position = this.pixelPosition(lat, lon);
-
+          {Object.entries(locations).map(([city, { position, nodeCount }]) => {
             return (
               <Location
-                key={i}
+                key={city}
                 position={position}
-                // focused={focused}
-                // node={node}
                 nodeCount={nodeCount}
+                city={city}
               />
             );
           })}
