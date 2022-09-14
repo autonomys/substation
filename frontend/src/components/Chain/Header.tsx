@@ -85,28 +85,35 @@ export class Header extends React.Component<HeaderProps> {
 
     return (
       <div className="Header">
-        <Tile icon={blockIcon} title="Best Block">
-          #{formatNumber(best)}
-        </Tile>
-        <Tile icon={finalizedIcon} title="Finalized Block">
-          #{formatNumber(finalized)}
-        </Tile>
-        <Tile icon={blockTimeIcon} title="Average Time">
-          {blockAverage == null
-            ? '-'
-            : secondsWithPrecision(blockAverage / 1000)}
-        </Tile>
-        <Tile icon={lastTimeIcon} title="Last Block">
-          <Ago when={blockTimestamp} />
-        </Tile>
-        <Tile icon={nodesIcon} title="Node Count">
-          {formatNumber(nodeCount)}
-        </Tile>
-        {spacePledged && (
-          <Tile icon={databaseIcon} title="Space Pledged">
-            {this.formatSpacePledged(spacePledged)}
+        <div>
+          <Tile icon={blockIcon} title="Best Block">
+            #{formatNumber(best)}
           </Tile>
-        )}
+          <Tile icon={finalizedIcon} title="Finalized Block">
+            #{formatNumber(finalized)}
+          </Tile>
+          <Tile icon={blockTimeIcon} title="Average Time">
+            {blockAverage == null
+              ? '-'
+              : secondsWithPrecision(blockAverage / 1000)}
+          </Tile>
+          <Tile icon={lastTimeIcon} title="Last Block">
+            <Ago when={blockTimestamp} />
+          </Tile>
+        </div>
+        <div>
+          <Tile icon={nodesIcon} title="Node Count">
+            {formatNumber(nodeCount)}
+          </Tile>
+          {spacePledged && (
+            <Tile icon={databaseIcon} title="Space Pledged">
+              {this.formatSpacePledged(spacePledged)}
+            </Tile>
+          )}
+          <Tile icon={databaseIcon} title="Unique reward addresses">
+            {formatNumber(0)}
+          </Tile>
+        </div>
         {!this.props.hideSettingsNav && (
           <div className="Header-tabs">
             <Tab
