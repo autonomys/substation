@@ -107,22 +107,21 @@ export class Chain extends React.Component<ChainProps, ChainState> {
           {disableNodeViews && (
             <div className="Chain-note">
               <p>
-                Currently node list is not displayed due to big amount of nodes.
-                We are currently working on updating Telemetry to handle this
-                amount of load.
+                The node list is currently disabled as we are encountering a
+                large amount of traffic. Please bear with us as we make
+                improvements to our telemetry.
               </p>
               <p>
-                In the meantime if you wish to verify that your node and farmer
-                are up and running, please follow{' '}
+                In the meantime, if you wish to verify that your node and farmer
+                are up and running, please visit the{' '}
                 <a
                   href="https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Feu-0.gemini-2a.subspace.network%2Fws#/accounts"
                   target="_blank"
                   rel="noreferrer"
                 >
-                  this
+                  Polkadot/Substrate Portal
                 </a>{' '}
-                link and check balance for a reward address that you specified
-                when starting farmer.
+                using your reward address to check your balance.
               </p>
             </div>
           )}
