@@ -17,13 +17,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
 .Tile {
-  font-size: 2.3em;
+  font-size: 2.5em;
   text-align: left;
-  height: 100px;
+  height: 80px;
   display: inline-block;
   position: relative;
   padding: 24px 0 0 70px;
   margin-right: 36px;
+  min-width: 140px;
+  box-sizing: content-box;
 }
 
 .Tile-label {
