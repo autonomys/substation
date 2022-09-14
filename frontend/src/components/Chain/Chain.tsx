@@ -102,7 +102,33 @@ export class Chain extends React.Component<ChainProps, ChainState> {
     const { appState, appUpdate, pins, sortBy, disableNodeViews } = this.props;
 
     if (display === 'stats' || disableNodeViews) {
-      return <Stats appState={appState} />;
+      return (
+        <>
+          {disableNodeViews && (
+            <div className="Chain-note">
+              <p>
+                Currently node list is not displayed due to big amount of nodes.
+                We are currently working on updating Telemetry to handle this
+                amount of load.
+              </p>
+              <p>
+                In the meantime if you wish to verify that your node and farmer
+                are up and running, please follow{' '}
+                <a
+                  href="https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Feu-0.gemini-2a.subspace.network%2Fws#/accounts"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  this
+                </a>{' '}
+                link and check balance for a reward address that you specified
+                when starting farmer.
+              </p>
+            </div>
+          )}
+          <Stats appState={appState} />
+        </>
+      );
     }
 
     if (display === 'settings') {
