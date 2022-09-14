@@ -173,6 +173,9 @@ pub struct InnerLoop {
     /// How big can the queue of messages coming in to the aggregator get before messages
     /// are prioritised and dropped to try and get back on track.
     max_queue_len: usize,
+
+    /// Buffer for lz4 compressed data
+    serialize_to: Vec<u8>,
 }
 
 impl InnerLoop {
@@ -190,6 +193,7 @@ impl InnerLoop {
             shard_channels: HashMap::new(),
             chain_to_feed_conn_ids: MultiMapUnique::new(),
             tx_to_locator,
+            serialize_to: Vec::new(),
             max_queue_len,
         }
     }
@@ -641,7 +645,17 @@ impl InnerLoop {
         serializer: FeedMessageSerializer,
     ) {
         if let Some(bytes) = serializer.into_finalized() {
-            self.broadcast_to_chain_feeds(genesis_hash, ToFeedWebsocket::Bytes(bytes));
+            self.serialize_to.clear();
+            let mut encoder = lz4::EncoderBuilder::new()
+                .checksum(lz4::ContentChecksum::NoChecksum)
+                .build(&mut self.serialize_to)
+                .expect("Write never fail");
+            std::io::Write::write(&mut encoder, &bytes).expect("Write never fail");
+            let _ = encoder.finish();
+            self.broadcast_to_chain_feeds(
+                genesis_hash,
+                ToFeedWebsocket::Bytes(self.serialize_to.clone().into()),
+            );
         }
     }
 
