@@ -51,9 +51,10 @@ export default class App extends React.Component {
     this.settings = new PersistentObject(
       'settings',
       {
-        validator: true,
+        // These columns are removed since backend is not sending us these data anymore, but we might need them later
+        // validator: false,
+        // implementation: false,
         location: true,
-        implementation: true,
         networkId: false,
         peers: true,
         txs: true,

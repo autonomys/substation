@@ -291,15 +291,10 @@ mod test {
         NodeDetails {
             chain: chain.into(),
             name: name.into(),
-            implementation: "Bar".into(),
-            target_arch: Some("x86_64".into()),
-            target_os: Some("linux".into()),
-            target_env: Some("env".into()),
             version: "0.1".into(),
             validator: None,
             network_id: NetworkId::new(),
             startup_time: None,
-            sysinfo: None,
         }
     }
 

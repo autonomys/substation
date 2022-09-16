@@ -239,8 +239,9 @@ export function bindState(bind: React.Component, state: State): Update {
 
 export interface StateSettings {
   location: boolean;
-  validator: boolean;
-  implementation: boolean;
+  // These columns are removed since backend is not sending us these data anymore, but we might need them later
+  // validator: boolean;
+  // implementation: boolean;
   networkId: boolean;
   peers: boolean;
   txs: boolean;

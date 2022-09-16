@@ -20,7 +20,6 @@ use common::node_types::{Block, Timestamp};
 use common::{id_type, time, DenseMap, MostSeen, NumStats};
 use once_cell::sync::Lazy;
 use std::collections::HashSet;
-use std::str::FromStr;
 use std::time::{Duration, Instant};
 
 use crate::feed_message::{self, ChainStats, FeedMessageSerializer};
@@ -82,9 +81,7 @@ pub struct RemoveNodeResult {
 
 /// Genesis hashes of chains we consider "first party". These chains allow any
 /// number of nodes to connect.
-static FIRST_PARTY_NETWORKS: Lazy<HashSet<BlockHash>> = Lazy::new(|| {
-    Default::default()
-});
+static FIRST_PARTY_NETWORKS: Lazy<HashSet<BlockHash>> = Lazy::new(Default::default);
 
 /// When we construct a chain, we want to check to see whether or not it's a "first party"
 /// network first, and assign a `max_nodes` accordingly. This helps us do that.
@@ -124,7 +121,7 @@ impl Chain {
 
         let details = node.details();
         self.stats_collator
-            .add_or_remove_node(details, None, CounterValue::Increment);
+            .add_or_remove_node(details, CounterValue::Increment);
 
         let node_chain_label = &details.chain;
         let label_result = self.labels.insert(node_chain_label);
@@ -149,7 +146,7 @@ impl Chain {
 
         let details = node.details();
         self.stats_collator
-            .add_or_remove_node(details, node.hwbench(), CounterValue::Decrement);
+            .add_or_remove_node(details, CounterValue::Decrement);
 
         let node_chain_label = &node.details().chain;
         let label_result = self.labels.remove(node_chain_label);
@@ -191,19 +188,6 @@ impl Chain {
                         feed.push(feed_message::AddedNode(nid.into(), &node));
                     }
                     return;
-                }
-                Payload::HwBench(ref hwbench) => {
-                    let new_hwbench = common::node_types::NodeHwBench {
-                        cpu_hashrate_score: hwbench.cpu_hashrate_score,
-                        memory_memcpy_score: hwbench.memory_memcpy_score,
-                        disk_sequential_write_score: hwbench.disk_sequential_write_score,
-                        disk_random_write_score: hwbench.disk_random_write_score,
-                    };
-                    let old_hwbench = node.update_hwbench(new_hwbench);
-                    self.stats_collator
-                        .update_hwbench(old_hwbench.as_ref(), CounterValue::Decrement);
-                    self.stats_collator
-                        .update_hwbench(node.hwbench(), CounterValue::Increment);
                 }
                 _ => {}
             }
