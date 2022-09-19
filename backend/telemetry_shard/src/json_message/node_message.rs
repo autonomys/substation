@@ -76,8 +76,6 @@ pub enum Payload {
     NotifyFinalized(Finalized),
     #[serde(rename = "afg.authority_set")]
     AfgAuthoritySet(AfgAuthoritySet),
-    #[serde(rename = "sysinfo.hwbench")]
-    HwBench(NodeHwBench),
 }
 
 impl From<Payload> for internal::Payload {
@@ -88,7 +86,6 @@ impl From<Payload> for internal::Payload {
             Payload::BlockImport(m) => internal::Payload::BlockImport(m.into()),
             Payload::NotifyFinalized(m) => internal::Payload::NotifyFinalized(m.into()),
             Payload::AfgAuthoritySet(m) => internal::Payload::AfgAuthoritySet(m.into()),
-            Payload::HwBench(m) => internal::Payload::HwBench(m.into()),
         }
     }
 }
@@ -187,103 +184,30 @@ impl From<Block> for node_types::Block {
 }
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct NodeSysInfo {
-    pub cpu: Option<Box<str>>,
-    pub memory: Option<u64>,
-    pub core_count: Option<u32>,
-    pub linux_kernel: Option<Box<str>>,
-    pub linux_distro: Option<Box<str>>,
-    pub is_virtual_machine: Option<bool>,
-}
-
-impl From<NodeSysInfo> for node_types::NodeSysInfo {
-    fn from(sysinfo: NodeSysInfo) -> Self {
-        node_types::NodeSysInfo {
-            cpu: sysinfo.cpu,
-            memory: sysinfo.memory,
-            core_count: sysinfo.core_count,
-            linux_kernel: sysinfo.linux_kernel,
-            linux_distro: sysinfo.linux_distro,
-            is_virtual_machine: sysinfo.is_virtual_machine,
-        }
-    }
-}
-
-#[derive(Deserialize, Debug, Clone)]
-pub struct NodeHwBench {
-    pub cpu_hashrate_score: u64,
-    pub memory_memcpy_score: u64,
-    pub disk_sequential_write_score: Option<u64>,
-    pub disk_random_write_score: Option<u64>,
-}
-
-impl From<NodeHwBench> for node_types::NodeHwBench {
-    fn from(hwbench: NodeHwBench) -> Self {
-        node_types::NodeHwBench {
-            cpu_hashrate_score: hwbench.cpu_hashrate_score,
-            memory_memcpy_score: hwbench.memory_memcpy_score,
-            disk_sequential_write_score: hwbench.disk_sequential_write_score,
-            disk_random_write_score: hwbench.disk_random_write_score,
-        }
-    }
-}
-
-impl From<NodeHwBench> for internal::NodeHwBench {
-    fn from(msg: NodeHwBench) -> Self {
-        internal::NodeHwBench {
-            cpu_hashrate_score: msg.cpu_hashrate_score,
-            memory_memcpy_score: msg.memory_memcpy_score,
-            disk_sequential_write_score: msg.disk_sequential_write_score,
-            disk_random_write_score: msg.disk_random_write_score,
-        }
-    }
-}
-
-#[derive(Deserialize, Debug, Clone)]
 pub struct NodeDetails {
     pub chain: Box<str>,
     pub name: Box<str>,
-    pub implementation: Box<str>,
     pub version: Box<str>,
     pub validator: Option<Box<str>>,
     pub network_id: node_types::NetworkId,
     pub startup_time: Option<Box<str>>,
-    pub target_os: Option<Box<str>>,
-    pub target_arch: Option<Box<str>>,
-    pub target_env: Option<Box<str>>,
-    pub sysinfo: Option<NodeSysInfo>,
 }
 
 impl From<NodeDetails> for node_types::NodeDetails {
     fn from(mut details: NodeDetails) -> Self {
         // Migrate old-style `version` to the split metrics.
         // TODO: Remove this once everyone updates their nodes.
-        if details.target_os.is_none()
-            && details.target_arch.is_none()
-            && details.target_env.is_none()
-        {
-            if let Some((version, target_arch, target_os, target_env)) =
-                split_old_style_version(&details.version)
-            {
-                details.target_arch = Some(target_arch.into());
-                details.target_os = Some(target_os.into());
-                details.target_env = Some(target_env.into());
-                details.version = version.into();
-            }
+        if let Some((version, _, _, _)) = split_old_style_version(&details.version) {
+            details.version = version.into();
         }
 
         node_types::NodeDetails {
             chain: details.chain,
             name: details.name,
-            implementation: details.implementation,
             version: details.version,
             validator: details.validator,
             network_id: details.network_id,
             startup_time: details.startup_time,
-            target_os: details.target_os,
-            target_arch: details.target_arch,
-            target_env: details.target_env,
-            sysinfo: details.sysinfo.map(|sysinfo| sysinfo.into()),
         }
     }
 }

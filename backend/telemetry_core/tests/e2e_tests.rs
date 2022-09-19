@@ -606,6 +606,7 @@ async fn e2e_node_banned_if_it_sends_too_much_data() {
 
 /// Feeds will be disconnected if they can't receive messages quickly enough.
 #[tokio::test]
+#[ignore = "Ignored as polkadot is not considered first class chain for telemetry in our fork"]
 async fn e2e_slow_feeds_are_disconnected() {
     let mut server = start_server(
         ServerOpts::default(),

@@ -33,7 +33,7 @@ import { getHashData } from './utils';
 
 import './App.css';
 
-const DISABLE_NODES = false;
+const DISABLE_NODE_LIST = Boolean(process.env.DISABLE_NODE_LIST);
 
 export default class App extends React.Component {
   private chainsCache: ChainData[] = [];
@@ -51,9 +51,10 @@ export default class App extends React.Component {
     this.settings = new PersistentObject(
       'settings',
       {
-        validator: true,
+        // These columns are removed since backend is not sending us these data anymore, but we might need them later
+        // validator: false,
+        // implementation: false,
         location: true,
-        implementation: true,
         networkId: false,
         peers: true,
         txs: true,
@@ -127,7 +128,7 @@ export default class App extends React.Component {
       this.pins,
       this.appState,
       this.appUpdate,
-      DISABLE_NODES
+      DISABLE_NODE_LIST
     );
 
     setInterval(() => (this.chainsCache = []), 10000); // Wipe sorted chains cache every 10 seconds
@@ -176,7 +177,7 @@ export default class App extends React.Component {
           settings={this.settings}
           pins={this.pins}
           sortBy={this.sortBy}
-          disableNodeViews={DISABLE_NODES}
+          disableNodeViews={DISABLE_NODE_LIST}
           subscribedData={subscribedData}
         />
         {overlay}

@@ -110,7 +110,32 @@ export class Chain extends React.Component<ChainProps, ChainState> {
     const { appState, appUpdate, pins, sortBy, disableNodeViews } = this.props;
 
     if (display === 'stats' || disableNodeViews) {
-      return <Stats appState={appState} />;
+      return (
+        <>
+          {disableNodeViews && (
+            <div className="Chain-note">
+              <p>
+                The node list is currently disabled as we are encountering a
+                large amount of traffic. Please bear with us as we make
+                improvements to our telemetry.
+              </p>
+              <p>
+                In the meantime, if you wish to verify that your node and farmer
+                are up and running, please visit the{' '}
+                <a
+                  href="https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Feu-0.gemini-2a.subspace.network%2Fws#/accounts"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Polkadot/Substrate Portal
+                </a>{' '}
+                using your reward address to check your balance.
+              </p>
+            </div>
+          )}
+          <Stats appState={appState} />
+        </>
+      );
     }
 
     if (display === 'settings') {

@@ -17,8 +17,7 @@
 use crate::find_location;
 use common::node_message::SystemInterval;
 use common::node_types::{
-    Block, BlockDetails, NodeDetails, NodeHardware, NodeHwBench, NodeIO, NodeLocation, NodeStats,
-    Timestamp,
+    Block, BlockDetails, NodeDetails, NodeHardware, NodeIO, NodeLocation, NodeStats, Timestamp,
 };
 use common::time;
 
@@ -48,8 +47,6 @@ pub struct Node {
     stale: bool,
     /// Unix timestamp for when node started up (falls back to connection time)
     startup_time: Option<Timestamp>,
-    /// Hardware benchmark results for the node
-    hwbench: Option<NodeHwBench>,
 }
 
 impl Node {
@@ -70,7 +67,6 @@ impl Node {
             location: None,
             stale: false,
             startup_time,
-            hwbench: None,
         }
     }
 
@@ -112,14 +108,6 @@ impl Node {
 
     pub fn block_details(&self) -> &BlockDetails {
         &self.best
-    }
-
-    pub fn hwbench(&self) -> Option<&NodeHwBench> {
-        self.hwbench.as_ref()
-    }
-
-    pub fn update_hwbench(&mut self, hwbench: NodeHwBench) -> Option<NodeHwBench> {
-        self.hwbench.replace(hwbench)
     }
 
     pub fn update_block(&mut self, block: Block) -> bool {
