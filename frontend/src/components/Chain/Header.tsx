@@ -60,7 +60,7 @@ export class Header extends React.Component<HeaderProps> {
       this.props.blockAverage !== nextProps.blockAverage ||
       this.props.currentTab !== nextProps.currentTab ||
       this.props.nodeCount !== nextProps.nodeCount ||
-      this.props.spacePledged !== nextProps.spacePledged || 
+      this.props.spacePledged !== nextProps.spacePledged ||
       this.props.uniqueAddressCount !== nextProps.uniqueAddressCount
     );
   }

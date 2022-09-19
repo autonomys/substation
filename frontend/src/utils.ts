@@ -138,3 +138,34 @@ export function solutionRangeToSpace(solutionRange: bigint): number {
       PIECE_SIZE
   );
 }
+
+export async function fetchUniqAddrCount() {
+  const headers = new Headers();
+  headers.append('x-api-key', process.env.SUBSCAN_API_KEY as string);
+  headers.append('Content-Type', 'application/json');
+
+  const body = JSON.stringify({
+    filter: '',
+    row: 1,
+    page: 0,
+    order: 'desc',
+    order_field: 'balance',
+  });
+
+  const requestOptions = {
+    method: 'POST',
+    headers,
+    body,
+  };
+
+  try {
+    const response = await fetch(
+      'https://subspace.api.subscan.io/api/scan/accounts',
+      requestOptions
+    );
+    const { data } = await response.json();
+    return data.count;
+  } catch (error) {
+    console.log(`Failed to fetch from Subscan: ${error}`);
+  }
+}

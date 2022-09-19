@@ -18,7 +18,12 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from './common';
 import { State, Update, Node, ChainData, PINNED_CHAINS } from './state';
 import { PersistentSet } from './persist';
-import { getHashData, setHashData, solutionRangeToSpace } from './utils';
+import {
+  getHashData,
+  setHashData,
+  solutionRangeToSpace,
+  fetchUniqAddrCount,
+} from './utils';
 import { ACTIONS } from './common/feed';
 
 const CONNECTION_TIMEOUT_BASE = (1000 * 5) as Types.Milliseconds; // 5 seconds
@@ -180,11 +185,14 @@ export class Connection {
             (await apiAt.query.subspace.solutionRanges()) as any;
           const spacePledged = solutionRangeToSpace(current.toBigInt());
 
+          const uniqueAddressCount = await fetchUniqAddrCount();
+
           this.appUpdate({
             best,
             blockTimestamp,
             blockAverage,
             spacePledged,
+            uniqueAddressCount,
           });
 
           break;
