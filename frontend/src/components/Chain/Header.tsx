@@ -30,6 +30,7 @@ import settingsIcon from '../../icons/settings.svg';
 import nodesIcon from '../../icons/blockchain-icon.svg';
 import statsIcon from '../../icons/graph.svg';
 import databaseIcon from '../../icons/database.svg';
+import fingerprintIcon from '../../icons/fingerprint.svg';
 
 import './Header.css';
 
@@ -43,6 +44,7 @@ interface HeaderProps {
   setDisplay: (display: ChainDisplay) => void;
   hideSettingsNav?: boolean;
   spacePledged: Maybe<number>;
+  uniqueAddressCount: number;
 }
 
 const TB = 1024 * 1024 * 1024 * 1024;
@@ -58,7 +60,8 @@ export class Header extends React.Component<HeaderProps> {
       this.props.blockAverage !== nextProps.blockAverage ||
       this.props.currentTab !== nextProps.currentTab ||
       this.props.nodeCount !== nextProps.nodeCount ||
-      this.props.spacePledged !== nextProps.spacePledged
+      this.props.spacePledged !== nextProps.spacePledged || 
+      this.props.uniqueAddressCount !== nextProps.uniqueAddressCount
     );
   }
 
@@ -80,6 +83,7 @@ export class Header extends React.Component<HeaderProps> {
       blockTimestamp,
       blockAverage,
       spacePledged,
+      uniqueAddressCount,
     } = this.props;
     const { currentTab, setDisplay } = this.props;
 
@@ -105,14 +109,14 @@ export class Header extends React.Component<HeaderProps> {
           <Tile icon={nodesIcon} title="Node Count">
             {formatNumber(nodeCount)}
           </Tile>
-          {spacePledged && (
+          <Tile icon={fingerprintIcon} title="Unique addresses">
+            {formatNumber(uniqueAddressCount)}
+          </Tile>
+          {spacePledged ? (
             <Tile icon={databaseIcon} title="Space Pledged">
               {this.formatSpacePledged(spacePledged)}
             </Tile>
-          )}
-          <Tile icon={databaseIcon} title="Unique reward addresses">
-            {formatNumber(0)}
-          </Tile>
+          ) : null}
         </div>
         {!this.props.hideSettingsNav && (
           <div className="Header-tabs">

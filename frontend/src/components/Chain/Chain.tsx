@@ -69,7 +69,7 @@ export class Chain extends React.Component<ChainProps, ChainState> {
 
   public render() {
     const { appState, subscribedData } = this.props;
-    const { best, finalized, blockTimestamp, blockAverage, spacePledged } =
+    const { best, finalized, blockTimestamp, blockAverage, spacePledged, uniqueAddressCount } =
       appState;
     const { display: currentTab } = this.state;
 
@@ -89,6 +89,7 @@ export class Chain extends React.Component<ChainProps, ChainState> {
               ? spacePledged
               : undefined
           }
+          uniqueAddressCount={uniqueAddressCount}
         />
         <div className="Chain-content-container">
           <div className="Chain-content">{this.renderContent()}</div>
