@@ -33,7 +33,7 @@ import { getHashData } from './utils';
 
 import './App.css';
 
-const DISABLE_NODE_LIST = Boolean(process.env.DISABLE_NODE_LIST);
+const DISABLE_NODE_LIST = process.env.DISABLE_NODE_LIST === '1';
 
 export default class App extends React.Component {
   private chainsCache: ChainData[] = [];
