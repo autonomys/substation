@@ -6,8 +6,8 @@
   "description": "Polkadot Telemetry frontend",
   "scripts": {
     "precommit": "lint-staged",
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "GENERATE_SOURCEMAP=false react-scripts start",
+    "build": "GENERATE_SOURCEMAP=false react-scripts build",
     "test": "TS_NODE_PROJECT=tsconfig.test.json tape -r ts-node/register test/**/*spec.ts",
     "test:coverage": "nyc yarn test",
     "eject": "react-scripts eject",

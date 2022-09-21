@@ -38,6 +38,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
 
 .Chain-note a {
-  text-decoration: none;
-  color: #562b8e;
+  color: inherit;
+  text-decoration-color: #562b8e;
 }
