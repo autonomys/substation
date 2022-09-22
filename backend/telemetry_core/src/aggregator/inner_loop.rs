@@ -25,6 +25,7 @@ use common::{
     node_types::BlockHash,
     time, MultiMapUnique,
 };
+use futures::{Sink, SinkExt, Stream, StreamExt};
 use std::collections::HashMap;
 use std::sync::{
     atomic::{AtomicU64, Ordering},
@@ -152,7 +153,7 @@ pub enum ToFeedWebsocket {
 
 /// Instances of this are responsible for handling incoming and
 /// outgoing messages in the main aggregator loop.
-pub struct InnerLoop {
+pub struct InnerLoop<L> {
     /// The state of our chains and nodes lives here:
     node_state: State,
     /// We maintain a mapping between NodeId and ConnId+LocalId, so that we know
@@ -168,7 +169,7 @@ pub struct InnerLoop {
     chain_to_feed_conn_ids: MultiMapUnique<BlockHash, ConnId>,
 
     /// Send messages here to make geographical location requests.
-    tx_to_locator: flume::Sender<(NodeId, IpAddr)>,
+    tx_to_locator: L,
 
     /// How big can the queue of messages coming in to the aggregator get before messages
     /// are prioritised and dropped to try and get back on track.
@@ -178,10 +179,10 @@ pub struct InnerLoop {
     send_node_data: bool,
 }
 
-impl InnerLoop {
+impl<L> InnerLoop<L> {
     /// Create a new inner loop handler with the various state it needs.
     pub fn new(
-        tx_to_locator: flume::Sender<(NodeId, IpAddr)>,
+        tx_to_locator: L,
         denylist: Vec<String>,
         max_queue_len: usize,
         max_third_party_nodes: usize,
@@ -198,9 +199,17 @@ impl InnerLoop {
             send_node_data,
         }
     }
+}
 
+impl<L> InnerLoop<L>
+where
+    L: Sink<(NodeId, IpAddr)> + Send + Unpin + 'static,
+{
     /// Start handling and responding to incoming messages.
-    pub async fn handle(mut self, rx_from_external: flume::Receiver<ToAggregator>) {
+    pub async fn handle<E>(mut self, mut rx_from_external: E)
+    where
+        E: Stream<Item = ToAggregator> + Unpin,
+    {
         let max_queue_len = self.max_queue_len;
         let (metered_tx, metered_rx) = flume::unbounded();
 
@@ -235,7 +244,7 @@ impl InnerLoop {
             }
         });
 
-        while let Ok(msg) = rx_from_external.recv_async().await {
+        while let Some(msg) = rx_from_external.next().await {
             total_messages.fetch_add(1, Ordering::Relaxed);
 
             // ignore node updates if we have too many messages to handle, in an attempt
@@ -381,8 +390,8 @@ impl InnerLoop {
                         ));
                         self.finalize_and_broadcast_to_all_feeds(feed_messages_for_all);
 
-                        // Ask for the grographical location of the node.
-                        let _ = self.tx_to_locator.send((node_id, ip));
+                        // Ask for the geographical location of the node.
+                        let _ = self.tx_to_locator.feed((node_id, ip));
                     }
                 }
             }

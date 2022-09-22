@@ -73,23 +73,35 @@ impl Aggregator {
     ) -> anyhow::Result<Aggregator> {
         let (tx_to_aggregator, rx_from_external) = flume::unbounded();
 
-        // Kick off a locator task to locate nodes, which hands back a channel to make location requests
-        let tx_to_locator =
-            find_location(tx_to_aggregator.clone().into_sink().with(|(node_id, msg)| {
-                future::ok::<_, flume::SendError<_>>(inner_loop::ToAggregator::FromFindLocation(
-                    node_id, msg,
-                ))
-            }));
+        if send_node_data {
+            // Kick off a locator task to locate nodes, which hands back a channel to make location requests
+            let tx_to_locator =
+                find_location(tx_to_aggregator.clone().into_sink().with(|(node_id, msg)| {
+                    future::ok::<_, flume::SendError<_>>(
+                        inner_loop::ToAggregator::FromFindLocation(node_id, msg),
+                    )
+                }));
 
-        // Handle any incoming messages in our handler loop:
-        tokio::spawn(Aggregator::handle_messages(
-            rx_from_external,
-            tx_to_locator,
-            max_queue_len,
-            denylist,
-            max_third_party_nodes,
-            send_node_data,
-        ));
+            // Handle any incoming messages in our handler loop:
+            tokio::spawn(Aggregator::handle_messages(
+                rx_from_external,
+                tx_to_locator.into_sink(),
+                max_queue_len,
+                denylist,
+                max_third_party_nodes,
+                send_node_data,
+            ));
+        } else {
+            // Handle any incoming messages in our handler loop:
+            tokio::spawn(Aggregator::handle_messages(
+                rx_from_external,
+                futures::sink::drain(),
+                max_queue_len,
+                denylist,
+                max_third_party_nodes,
+                send_node_data,
+            ));
+        };
 
         // Return a handle to our aggregator:
         Ok(Aggregator(Arc::new(AggregatorInternal {
@@ -102,14 +114,16 @@ impl Aggregator {
     /// This is spawned into a separate task and handles any messages coming
     /// in to the aggregator. If nobody is holding the tx side of the channel
     /// any more, this task will gracefully end.
-    async fn handle_messages(
+    async fn handle_messages<A>(
         rx_from_external: flume::Receiver<inner_loop::ToAggregator>,
-        tx_to_aggregator: flume::Sender<(NodeId, IpAddr)>,
+        tx_to_aggregator: A,
         max_queue_len: usize,
         denylist: Vec<String>,
         max_third_party_nodes: usize,
         send_node_data: bool,
-    ) {
+    ) where
+        A: Sink<(NodeId, IpAddr)> + Send + Unpin + 'static,
+    {
         inner_loop::InnerLoop::new(
             tx_to_aggregator,
             denylist,
@@ -117,7 +131,7 @@ impl Aggregator {
             max_third_party_nodes,
             send_node_data,
         )
-        .handle(rx_from_external)
+        .handle(rx_from_external.into_stream())
         .await;
     }
 
