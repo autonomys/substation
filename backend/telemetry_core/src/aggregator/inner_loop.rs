@@ -370,10 +370,13 @@ where
 
                         // Tell chain subscribers about the node we've just added:
                         let mut feed_messages_for_chain = FeedMessageSerializer::new();
-                        feed_messages_for_chain.push(feed_message::AddedNode(
-                            node_id.get_chain_node_id().into(),
-                            &details.node,
-                        ));
+                        if self.send_node_data {
+                            feed_messages_for_chain.push(feed_message::AddedNode(
+                                node_id.get_chain_node_id().into(),
+                                details.node,
+                            ));
+                        }
+                        // TODO: batch node add updates
                         self.finalize_and_broadcast_to_chain_feeds(
                             &genesis_hash,
                             feed_messages_for_chain,
@@ -422,16 +425,19 @@ where
                     }
                 };
 
+                // TODO: untie serialization and updating data
                 let mut feed_message_serializer = FeedMessageSerializer::new();
                 self.node_state
                     .update_node(node_id, payload, &mut feed_message_serializer);
 
-                if let Some(chain) = self.node_state.get_chain_by_node_id(node_id) {
-                    let genesis_hash = chain.genesis_hash();
-                    self.finalize_and_broadcast_to_chain_feeds(
-                        &genesis_hash,
-                        feed_message_serializer,
-                    );
+                if self.send_node_data {
+                    if let Some(chain) = self.node_state.get_chain_by_node_id(node_id) {
+                        let genesis_hash = chain.genesis_hash();
+                        self.finalize_and_broadcast_to_chain_feeds(
+                            &genesis_hash,
+                            feed_message_serializer,
+                        );
+                    }
                 }
             }
             FromShardWebsocket::Disconnected => {
@@ -564,7 +570,7 @@ where
                     }
                 }
 
-                // Actually make a note of the new chain subsciption:
+                // Actually make a note of the new chain subscription:
                 let new_genesis_hash = new_chain.genesis_hash();
                 self.chain_to_feed_conn_ids
                     .insert(new_genesis_hash, feed_conn_id);
@@ -594,6 +600,7 @@ where
         let mut feed_messages_for_all = FeedMessageSerializer::new();
         for (chain_label, node_ids) in node_ids_per_chain {
             let mut feed_messages_for_chain = FeedMessageSerializer::new();
+            // TODO: Update chain node count only once
             for node_id in node_ids {
                 self.remove_node(
                     node_id,
@@ -643,7 +650,7 @@ where
         }
 
         // Assuming the chain hasn't gone away, tell chain subscribers about the node removal
-        if removed_details.chain_node_count != 0 {
+        if removed_details.chain_node_count != 0 && self.send_node_data {
             feed_for_chain.push(feed_message::RemovedNode(
                 node_id.get_chain_node_id().into(),
             ));
