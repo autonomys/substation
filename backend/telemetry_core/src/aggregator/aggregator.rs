@@ -44,6 +44,8 @@ pub struct AggregatorOpts {
     /// How many nodes from third party chains are allowed to connect
     /// before we prevent connections from them.
     pub max_third_party_nodes: usize,
+    /// Should we send node data to a frontend
+    pub send_node_data: bool,
 }
 
 struct AggregatorInternal {
@@ -61,7 +63,14 @@ struct AggregatorInternal {
 
 impl Aggregator {
     /// Spawn a new Aggregator. This connects to the telemetry backend
-    pub async fn spawn(opts: AggregatorOpts) -> anyhow::Result<Aggregator> {
+    pub async fn spawn(
+        AggregatorOpts {
+            denylist,
+            max_queue_len,
+            max_third_party_nodes,
+            send_node_data,
+        }: AggregatorOpts,
+    ) -> anyhow::Result<Aggregator> {
         let (tx_to_aggregator, rx_from_external) = flume::unbounded();
 
         // Kick off a locator task to locate nodes, which hands back a channel to make location requests
@@ -76,9 +85,10 @@ impl Aggregator {
         tokio::spawn(Aggregator::handle_messages(
             rx_from_external,
             tx_to_locator,
-            opts.max_queue_len,
-            opts.denylist,
-            opts.max_third_party_nodes,
+            max_queue_len,
+            denylist,
+            max_third_party_nodes,
+            send_node_data,
         ));
 
         // Return a handle to our aggregator:
@@ -98,12 +108,14 @@ impl Aggregator {
         max_queue_len: usize,
         denylist: Vec<String>,
         max_third_party_nodes: usize,
+        send_node_data: bool,
     ) {
         inner_loop::InnerLoop::new(
             tx_to_aggregator,
             denylist,
             max_queue_len,
             max_third_party_nodes,
+            send_node_data,
         )
         .handle(rx_from_external)
         .await;

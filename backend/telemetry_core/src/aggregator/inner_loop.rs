@@ -185,12 +185,8 @@ impl InnerLoop {
         denylist: Vec<String>,
         max_queue_len: usize,
         max_third_party_nodes: usize,
+        send_node_data: bool,
     ) -> Self {
-        let send_node_data = !matches!(
-            std::env::var("OMIT_NODE_DATA").as_ref().map(String::as_str),
-            Ok("1" | "true" | "True" | "TRUE")
-        );
-
         InnerLoop {
             node_state: State::new(denylist, max_third_party_nodes),
             node_ids: BiMap::new(),

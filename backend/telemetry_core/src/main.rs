@@ -82,6 +82,9 @@ struct Opts {
     /// How many nodes from third party chains are allowed to connect before we prevent connections from them.
     #[structopt(long, default_value = "1000")]
     max_third_party_nodes: usize,
+    /// Omit sending node data to a telemetry frontend
+    #[structopt(long)]
+    omit_node_data: bool,
 }
 
 fn main() {
@@ -124,21 +127,30 @@ fn main() {
 }
 
 /// Declare our routes and start the server.
-async fn start_server(num_aggregators: usize, opts: Opts) -> anyhow::Result<()> {
-    let aggregator_queue_len = opts.aggregator_queue_len.unwrap_or(10_000);
+async fn start_server(
+    num_aggregators: usize,
+    Opts {
+        socket,
+        denylist,
+        feed_timeout,
+        aggregator_queue_len,
+        max_third_party_nodes,
+        omit_node_data,
+        ..
+    }: Opts,
+) -> anyhow::Result<()> {
     let aggregator = AggregatorSet::spawn(
         num_aggregators,
         AggregatorOpts {
-            max_queue_len: aggregator_queue_len,
-            denylist: opts.denylist,
-            max_third_party_nodes: opts.max_third_party_nodes,
+            max_queue_len: aggregator_queue_len.unwrap_or(10_000),
+            denylist,
+            max_third_party_nodes,
+            send_node_data: !omit_node_data,
         },
     )
     .await?;
-    let socket_addr = opts.socket;
-    let feed_timeout = opts.feed_timeout;
 
-    let server = http_utils::start_server(socket_addr, move |addr, req| {
+    let server = http_utils::start_server(socket, move |addr, req| {
         let aggregator = aggregator.clone();
         async move {
             match (req.method(), req.uri().path().trim_end_matches('/')) {
