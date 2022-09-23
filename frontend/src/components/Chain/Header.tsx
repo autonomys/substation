@@ -109,9 +109,11 @@ export class Header extends React.Component<HeaderProps> {
           <Tile icon={nodesIcon} title="Node Count">
             {formatNumber(nodeCount)}
           </Tile>
-          <Tile icon={fingerprintIcon} title="Unique addresses">
-            {formatNumber(uniqueAddressCount)}
-          </Tile>
+          {uniqueAddressCount ? (
+            <Tile icon={fingerprintIcon} title="Unique addresses">
+              {formatNumber(uniqueAddressCount)}
+            </Tile>
+          ) : null}
           {spacePledged ? (
             <Tile icon={databaseIcon} title="Space Pledged">
               {this.formatSpacePledged(spacePledged)}
