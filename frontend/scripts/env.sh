@@ -14,6 +14,7 @@ declare -a vars=(
   "SUBSTRATE_TELEMETRY_URL"
   "SUBSTRATE_TELEMETRY_SAMPLE"
   "DISABLE_NODE_LIST"
+  "SUBSPACE_API_URL"
 )
 
 echo "window.process_env = {" >> $TARGET

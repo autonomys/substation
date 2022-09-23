@@ -141,8 +141,8 @@ export function solutionRangeToSpace(solutionRange: bigint): number {
 
 export async function fetchUniqAddrCount() {
   try {
-    // TODO: replace hardcoded url
-    const response = await fetch('http://localhost:8000/api');
+    const url = window.process_env['SUBSPACE_API_URL'] || 'http://localhost:8000/api';
+    const response = await fetch(url);
     const json = await response.json();
     return json.uniqueAddressCount;
   } catch (error) {
