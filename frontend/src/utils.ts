@@ -135,7 +135,7 @@ export function solutionRangeToSpace(solutionRange: bigint): number {
 
   return Number(
     ((MAX_U64 * SLOT_PROBABILITY[0]) / SLOT_PROBABILITY[1] / solutionRange) *
-    PIECE_SIZE
+      PIECE_SIZE
   );
 }
 

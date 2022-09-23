@@ -44,7 +44,7 @@ interface HeaderProps {
   setDisplay: (display: ChainDisplay) => void;
   hideSettingsNav?: boolean;
   spacePledged: Maybe<number>;
-  uniqueAddressCount: number;
+  uniqueAddressCount: Maybe<number>;
 }
 
 const TB = 1024 * 1024 * 1024 * 1024;
@@ -89,37 +89,33 @@ export class Header extends React.Component<HeaderProps> {
 
     return (
       <div className="Header">
-        <div>
-          <Tile icon={blockIcon} title="Best Block">
-            #{formatNumber(best)}
+        <Tile icon={blockIcon} title="Best Block">
+          #{formatNumber(best)}
+        </Tile>
+        <Tile icon={finalizedIcon} title="Finalized Block">
+          #{formatNumber(finalized)}
+        </Tile>
+        <Tile icon={blockTimeIcon} title="Average Time">
+          {blockAverage == null
+            ? '-'
+            : secondsWithPrecision(blockAverage / 1000)}
+        </Tile>
+        <Tile icon={lastTimeIcon} title="Last Block">
+          <Ago when={blockTimestamp} />
+        </Tile>
+        <Tile icon={nodesIcon} title="Node Count">
+          {formatNumber(nodeCount)}
+        </Tile>
+        {uniqueAddressCount ? (
+          <Tile icon={fingerprintIcon} title="Unique addresses">
+            {formatNumber(uniqueAddressCount)}
           </Tile>
-          <Tile icon={finalizedIcon} title="Finalized Block">
-            #{formatNumber(finalized)}
+        ) : null}
+        {spacePledged ? (
+          <Tile icon={databaseIcon} title="Space Pledged">
+            {this.formatSpacePledged(spacePledged)}
           </Tile>
-          <Tile icon={blockTimeIcon} title="Average Time">
-            {blockAverage == null
-              ? '-'
-              : secondsWithPrecision(blockAverage / 1000)}
-          </Tile>
-          <Tile icon={lastTimeIcon} title="Last Block">
-            <Ago when={blockTimestamp} />
-          </Tile>
-        </div>
-        <div>
-          <Tile icon={nodesIcon} title="Node Count">
-            {formatNumber(nodeCount)}
-          </Tile>
-          {uniqueAddressCount ? (
-            <Tile icon={fingerprintIcon} title="Unique addresses">
-              {formatNumber(uniqueAddressCount)}
-            </Tile>
-          ) : null}
-          {spacePledged ? (
-            <Tile icon={databaseIcon} title="Space Pledged">
-              {this.formatSpacePledged(spacePledged)}
-            </Tile>
-          ) : null}
-        </div>
+        ) : null}
         {!this.props.hideSettingsNav && (
           <div className="Header-tabs">
             <Tab
