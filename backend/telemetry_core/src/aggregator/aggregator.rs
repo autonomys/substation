@@ -92,6 +92,20 @@ impl Aggregator {
                 send_node_data,
             ));
         } else {
+            tokio::task::spawn({
+                let tx_to_aggregator = tx_to_aggregator.clone();
+                let mut timer = tokio::time::interval(std::time::Duration::from_secs(10));
+                // First tick is instant
+                timer.tick().await;
+
+                async move {
+                    while let Ok(()) = tx_to_aggregator.send(inner_loop::ToAggregator::SendUpdates)
+                    {
+                        timer.tick().await;
+                    }
+                }
+            });
+
             // Handle any incoming messages in our handler loop:
             tokio::spawn(Aggregator::handle_messages(
                 rx_from_external,
