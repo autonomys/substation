@@ -15,10 +15,11 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use super::aggregator::ConnId;
-use crate::feed_message::{self, FeedMessageSerializer};
+use crate::feed_message::{self, DiscardFeedMessages, FeedMessageSerializer, FeedMessageWriter};
 use crate::find_location;
 use crate::state::{self, NodeId, State};
 use bimap::BiMap;
+use common::node_types::Block;
 use common::{
     internal_messages::{self, MuteReason, ShardNodeId},
     node_message,
@@ -39,6 +40,7 @@ pub enum ToAggregator {
     FromShardWebsocket(ConnId, FromShardWebsocket),
     FromFeedWebsocket(ConnId, FromFeedWebsocket),
     FromFindLocation(NodeId, find_location::Location),
+    SendUpdates,
     /// Hand back some metrics. The provided sender is expected not to block when
     /// a message is sent into it.
     GatherMetrics(flume::Sender<Metrics>),
@@ -234,6 +236,7 @@ where
                     ToAggregator::FromFindLocation(node_id, location) => {
                         self.handle_from_find_location(node_id, location)
                     }
+                    ToAggregator::SendUpdates => self.send_updates(),
                     ToAggregator::GatherMetrics(tx) => self.handle_gather_metrics(
                         tx,
                         metered_rx.len(),
@@ -265,6 +268,35 @@ where
             if let Err(e) = metered_tx.send(msg) {
                 log::error!("Cannot send message into aggregator: {}", e);
                 break;
+            }
+        }
+    }
+
+    fn send_updates(&mut self) {
+        for chain in self.node_state.iter_chains() {
+            let mut feed = FeedMessageSerializer::new();
+
+            feed.push(feed_message::BestBlock(
+                chain.best_block().height,
+                chain.timestamp(),
+                chain.average_block_time(),
+            ));
+            let Block { hash, height } = *chain.finalized_block();
+            feed.push(feed_message::BestFinalized(height, hash));
+
+            // XXX: it should be just a call to:
+            // self.finalize_and_broadcast_to_chain_feeds(&genesis, feed);
+
+            let msg = feed.into_finalized().map(ToFeedWebsocket::Bytes).unwrap();
+            if let Some(feeds) = self
+                .chain_to_feed_conn_ids
+                .get_values(&chain.genesis_hash())
+            {
+                for &feed_id in feeds {
+                    if let Some(chan) = self.feed_channels.get_mut(&feed_id) {
+                        let _ = chan.send(msg.clone());
+                    }
+                }
             }
         }
     }
@@ -426,11 +458,10 @@ where
                 };
 
                 // TODO: untie serialization and updating data
-                let mut feed_message_serializer = FeedMessageSerializer::new();
-                self.node_state
-                    .update_node(node_id, payload, &mut feed_message_serializer);
-
                 if self.send_node_data {
+                    let mut feed_message_serializer = FeedMessageSerializer::new();
+                    self.node_state
+                        .update_node(node_id, payload, &mut feed_message_serializer);
                     if let Some(chain) = self.node_state.get_chain_by_node_id(node_id) {
                         let genesis_hash = chain.genesis_hash();
                         self.finalize_and_broadcast_to_chain_feeds(
@@ -438,6 +469,9 @@ where
                             feed_message_serializer,
                         );
                     }
+                } else {
+                    self.node_state
+                        .update_node(node_id, payload, &mut DiscardFeedMessages);
                 }
             }
             FromShardWebsocket::Disconnected => {

@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use super::node::Node;
-use crate::feed_message::{ChainStats, FeedMessageSerializer};
+use crate::feed_message::{ChainStats, FeedMessageWriter};
 use crate::find_location;
 use common::node_message::Payload;
 use common::node_types::{Block, BlockHash, NodeDetails, Timestamp};
@@ -217,7 +217,7 @@ impl State {
         &mut self,
         NodeId(chain_id, chain_node_id): NodeId,
         payload: Payload,
-        feed: &mut FeedMessageSerializer,
+        feed: &mut impl FeedMessageWriter,
     ) {
         let chain = match self.chains.get_mut(chain_id) {
             Some(chain) => chain,
