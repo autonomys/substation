@@ -28,8 +28,10 @@ export function Tile(props: TileProps) {
   return (
     <div className="Tile">
       <Icon src={props.icon} />
-      <div className="Tile-label">{props.title}</div>
-      <div className="Tile-content">{props.children}</div>
+      <div>
+        <div className="Tile-label">{props.title}</div>
+        <div className="Tile-content">{props.children}</div>
+      </div>
     </div>
   );
 }
