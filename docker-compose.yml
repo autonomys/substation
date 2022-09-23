@@ -42,10 +42,8 @@ services:
     command: [
       'telemetry_core',
       '--listen', '0.0.0.0:8000',
-      '--max-third-party-nodes', '100000'
+      '--max-third-party-nodes', '100000',
     ]
-    environment:
-      OMIT_NODE_DATA: 0
     ports:
       - 127.0.0.1:8000:8000
     expose:
