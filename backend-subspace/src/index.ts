@@ -5,7 +5,7 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 const data = {
-  uniqueAddressCount: 108,
+  uniqueAddressCount: 0,
 };
 
 async function fetchAddresses() {
@@ -40,13 +40,20 @@ async function fetchAddresses() {
   }
 }
 
+async function updateAddressCount() {
+  const addresses = await fetchAddresses();
+
+  if (addresses) {
+    console.log('addresses.count', addresses.count);
+    // remove vesting accounts
+    data.uniqueAddressCount = addresses.count - 18;
+  }
+}
+
 (async () => {
   try {
-    setInterval(async () => {
-      const addresses = await fetchAddresses();
-
-      data.uniqueAddressCount = addresses.count - 18;
-    }, 10000);
+    await updateAddressCount();
+    setInterval(async () => await updateAddressCount(), 10000);
 
     const server = http.createServer(async (req, res) => {
       if (req.url === '/api') {
