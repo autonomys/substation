@@ -82,9 +82,13 @@ struct Opts {
     /// How many nodes from third party chains are allowed to connect before we prevent connections from them.
     #[structopt(long, default_value = "1000")]
     max_third_party_nodes: usize,
-    /// Omit sending node data to a telemetry frontend
-    #[structopt(long)]
-    omit_node_data: bool,
+    /// Send updates periodically (in seconds).
+    #[structopt(long, parse(try_from_str = parse_duration))]
+    update_every: Option<Duration>,
+}
+
+fn parse_duration(arg: &str) -> Result<Duration, std::num::ParseIntError> {
+    arg.parse().map(Duration::from_secs)
 }
 
 fn main() {
@@ -135,7 +139,7 @@ async fn start_server(
         feed_timeout,
         aggregator_queue_len,
         max_third_party_nodes,
-        omit_node_data,
+        update_every,
         ..
     }: Opts,
 ) -> anyhow::Result<()> {
@@ -145,7 +149,7 @@ async fn start_server(
             max_queue_len: aggregator_queue_len.unwrap_or(10_000),
             denylist,
             max_third_party_nodes,
-            send_node_data: !omit_node_data,
+            update_every,
         },
     )
     .await?;
