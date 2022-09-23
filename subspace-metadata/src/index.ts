@@ -5,31 +5,22 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 const data = {
-  uniqueAddressCount: 0,
-  // TODO: add space pledged
+  uniqueAddressCount: "",
+  spacePledged: "",
 };
 
-async function fetchAddresses() {
-  const body = JSON.stringify({
-    filter: '',
-    row: 1,
-    page: 0,
-    order: 'desc',
-    order_field: 'balance',
-  });
-
+async function fetchMetadata() {
   const requestOptions = {
     method: 'POST',
     headers: {
       'x-api-key': process.env.SUBSCAN_API_KEY as string,
       'Content-Type': 'application/json',
     },
-    body,
   };
 
   try {
     const response = await fetch(
-      'https://subspace.api.subscan.io/api/scan/accounts',
+      'https://subspace.api.subscan.io/api/scan/metadata',
       requestOptions
     );
     const json = await response.json();
@@ -41,26 +32,25 @@ async function fetchAddresses() {
   }
 }
 
-async function updateAddressCount() {
-  const addresses = await fetchAddresses();
+async function updateMetadata() {
+  const metadata = await fetchMetadata();
 
-  if (addresses) {
-    console.log('addresses.count', addresses.count);
-    // remove vesting accounts
-    data.uniqueAddressCount = addresses.count - 18;
+  if (metadata) {
+    data.uniqueAddressCount = metadata.qualifiedRewardAddressesCount;
+    data.spacePledged = metadata.consensusSpace;
   }
 }
 
 (async () => {
   try {
-    await updateAddressCount();
-    setInterval(async () => await updateAddressCount(), 10000);
+    await updateMetadata();
+    setInterval(async () => await updateMetadata(), 10000);
 
     const server = http.createServer(async (req, res) => {
       const headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'OPTIONS, POST, GET',
-        'Access-Control-Max-Age': 2592000, 
+        'Access-Control-Max-Age': 2592000,
         'Content-Type': 'application/json',
       };
 

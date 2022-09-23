@@ -128,23 +128,14 @@ export function getSVGShadowRoot(): SVGSVGElement {
   return root;
 }
 
-export function solutionRangeToSpace(solutionRange: bigint): number {
-  const MAX_U64 = BigInt(2) ** BigInt(64) - BigInt(1);
-  const SLOT_PROBABILITY = [BigInt(1), BigInt(6)];
-  const PIECE_SIZE = BigInt(4096);
-
-  return Number(
-    ((MAX_U64 * SLOT_PROBABILITY[0]) / SLOT_PROBABILITY[1] / solutionRange) *
-      PIECE_SIZE
-  );
-}
-
-export async function fetchUniqAddrCount() {
+export async function fetchMetadata() {
   try {
-    const url = window.process_env['SUBSPACE_API_URL'] || 'http://localhost:8000/api';
+    const url =
+      (window.process_env && window.process_env['SUBSPACE_API_URL']) ||
+      'http://localhost:8080/api';
     const response = await fetch(url);
     const json = await response.json();
-    return json.uniqueAddressCount;
+    return json;
   } catch (error) {
     console.log(`Failed to fetch unique address count: ${error}`);
     return 0;
