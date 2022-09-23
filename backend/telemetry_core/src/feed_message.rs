@@ -53,6 +53,16 @@ pub trait FeedMessageWriter {
     fn into_finalized(self) -> Option<bytes::Bytes>;
 }
 
+pub struct DiscardFeedMessages;
+
+impl FeedMessageWriter for DiscardFeedMessages {
+    fn push<M: FeedMessageWrite>(&mut self, _msg: M) {}
+    fn write(&mut self, _value: &impl Serialize) {}
+    fn into_finalized(self) -> Option<bytes::Bytes> {
+        None
+    }
+}
+
 pub struct FeedMessageSerializer {
     /// Current buffer,
     buffer: Vec<u8>,

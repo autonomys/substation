@@ -15,10 +15,11 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use super::aggregator::ConnId;
-use crate::feed_message::{self, FeedMessageSerializer, FeedMessageWriter};
+use crate::feed_message::{self, DiscardFeedMessages, FeedMessageSerializer, FeedMessageWriter};
 use crate::find_location;
 use crate::state::{self, NodeId, State};
 use bimap::BiMap;
+use common::node_types::Block;
 use common::{
     internal_messages::{self, MuteReason, ShardNodeId},
     node_message,
@@ -426,11 +427,10 @@ where
                 };
 
                 // TODO: untie serialization and updating data
-                let mut feed_message_serializer = FeedMessageSerializer::new();
-                self.node_state
-                    .update_node(node_id, payload, &mut feed_message_serializer);
-
                 if self.send_node_data {
+                    let mut feed_message_serializer = FeedMessageSerializer::new();
+                    self.node_state
+                        .update_node(node_id, payload, &mut feed_message_serializer);
                     if let Some(chain) = self.node_state.get_chain_by_node_id(node_id) {
                         let genesis_hash = chain.genesis_hash();
                         self.finalize_and_broadcast_to_chain_feeds(
@@ -438,6 +438,9 @@ where
                             feed_message_serializer,
                         );
                     }
+                } else {
+                    self.node_state
+                        .update_node(node_id, payload, &mut DiscardFeedMessages);
                 }
             }
             FromShardWebsocket::Disconnected => {
