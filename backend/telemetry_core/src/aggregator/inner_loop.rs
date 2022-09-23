@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use super::aggregator::ConnId;
-use crate::feed_message::{self, FeedMessageSerializer};
+use crate::feed_message::{self, FeedMessageSerializer, FeedMessageWriter};
 use crate::find_location;
 use crate::state::{self, NodeId, State};
 use bimap::BiMap;
