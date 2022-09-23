@@ -1,6 +1,18 @@
 version: "3"
 
 services:
+  subspace-metadata:
+    build:
+      dockerfile: Dockerfile
+      context: ./subspace-metadata/
+    restart: unless-stopped
+    read_only: true
+    environment:
+      SUBSCAN_API_KEY: ${SUBSCAN_API_KEY}
+    ports:
+      - 127.0.0.1:8080:8080
+    expose:
+      - 8080
   telemetry-frontend:
     build:
       dockerfile: Dockerfile
