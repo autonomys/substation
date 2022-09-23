@@ -56,8 +56,21 @@ async function updateAddressCount() {
     setInterval(async () => await updateAddressCount(), 10000);
 
     const server = http.createServer(async (req, res) => {
+      const headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'OPTIONS, POST, GET',
+        'Access-Control-Max-Age': 2592000, 
+        'Content-Type': 'application/json',
+      };
+
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204, headers);
+        res.end();
+        return;
+      }
+
       if (req.url === '/api') {
-        res.setHeader('Content-Type', 'application/json');
+        res.writeHead(200, headers);
         res.end(JSON.stringify(data));
       } else {
         res.statusCode = 404;
