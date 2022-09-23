@@ -6,6 +6,7 @@ dotenv.config();
 
 const data = {
   uniqueAddressCount: 0,
+  // TODO: add space pledged
 };
 
 async function fetchAddresses() {
@@ -78,7 +79,7 @@ async function updateAddressCount() {
       }
     });
 
-    server.listen(8000);
+    server.listen(8080);
   } catch (error) {
     console.log(error);
   }
