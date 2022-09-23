@@ -168,14 +168,12 @@ export class Connection {
 
           const { uniqueAddressCount, spacePledged } = await fetchMetadata();
 
-          console.log({ uniqueAddressCount, spacePledged });
-
           this.appUpdate({
             best,
             blockTimestamp,
             blockAverage,
-            spacePledged,
-            uniqueAddressCount,
+            spacePledged: parseInt(spacePledged, 10),
+            uniqueAddressCount: parseInt(uniqueAddressCount, 10),
           });
 
           break;
