@@ -17,13 +17,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
 .Tile {
-  font-size: 2.3em;
+  font-size: 2em;
   text-align: left;
-  height: 100px;
   display: inline-block;
   position: relative;
-  padding: 24px 0 0 70px;
-  margin-right: 36px;
+  display: flex;
+  align-items: center;
 }
 
 .Tile-label {
@@ -39,12 +38,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
 
 .Tile .Icon {
-  position: absolute;
-  left: 20px;
-  top: 15px;
   font-size: 0.8em;
   padding: 0.1em;
   border-radius: 1.25em;
   border: 2px solid #562b8e;
   color: #562b8e;
+  margin-right: 10px;
 }

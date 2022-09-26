@@ -13,12 +13,10 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-import { ApiPromise, WsProvider } from '@polkadot/api';
 import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from './common';
 import { State, Update, Node, ChainData, PINNED_CHAINS } from './state';
 import { PersistentSet } from './persist';
-import { getHashData, setHashData, solutionRangeToSpace } from './utils';
+import { getHashData, setHashData, fetchMetadata } from './utils';
 import { ACTIONS } from './common/feed';
 
 const CONNECTION_TIMEOUT_BASE = (1000 * 5) as Types.Milliseconds; // 5 seconds
@@ -38,15 +36,11 @@ export class Connection {
     appUpdate: Update,
     disableNodes?: boolean
   ): Promise<Connection> {
-    const rpcUrl = 'wss://eu-0.gemini-2a.subspace.network/ws';
-    const provider = new WsProvider(rpcUrl);
-    const api = await ApiPromise.create({ provider });
     return new Connection(
       await Connection.socket(),
       appState,
       appUpdate,
       pins,
-      api,
       disableNodes
     );
   }
@@ -131,7 +125,6 @@ export class Connection {
     private readonly appState: Readonly<State>,
     private readonly appUpdate: Update,
     private readonly pins: PersistentSet<Types.NodeName>,
-    private readonly api: ApiPromise,
     private readonly disableNodes?: boolean
   ) {
     this.bindSocket();
@@ -173,18 +166,14 @@ export class Connection {
 
           nodes.mutEachAndSort((node) => node.newBestBlock());
 
-          const blockHash = await this.api.rpc.chain.getBlockHash();
-          const apiAt = await this.api.at(blockHash);
-          const { current } =
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (await apiAt.query.subspace.solutionRanges()) as any;
-          const spacePledged = solutionRangeToSpace(current.toBigInt());
+          const { uniqueAddressCount, spacePledged } = await fetchMetadata();
 
           this.appUpdate({
             best,
             blockTimestamp,
             blockAverage,
-            spacePledged,
+            spacePledged: parseInt(spacePledged, 10),
+            uniqueAddressCount: parseInt(uniqueAddressCount, 10),
           });
 
           break;

@@ -118,6 +118,7 @@ export default class App extends React.Component {
       tab,
       chainStats: null,
       spacePledged: 0,
+      uniqueAddressCount: 0,
     });
     this.appState = this.appUpdate({});
 

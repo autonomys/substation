@@ -275,6 +275,7 @@ export interface State {
   selectedColumns: Column[];
   chainStats: Maybe<Types.ChainStats>;
   spacePledged: Maybe<Readonly<number>>;
+  uniqueAddressCount: number;
 }
 
 export type Update = <K extends keyof State>(

@@ -1,6 +1,18 @@
 version: "3"
 
 services:
+  subspace-metadata:
+    build:
+      dockerfile: Dockerfile
+      context: ./subspace-metadata/
+    restart: unless-stopped
+    read_only: true
+    environment:
+      SUBSCAN_API_KEY: ${SUBSCAN_API_KEY}
+    ports:
+      - 127.0.0.1:8080:8080
+    expose:
+      - 8080
   telemetry-frontend:
     build:
       dockerfile: Dockerfile
@@ -13,6 +25,7 @@ services:
       - /app/tmp:uid=101,gid=101
     environment:
       SUBSTRATE_TELEMETRY_URL: wss://telemetry.subspace.network/feed
+      SUBSPACE_API_URL: http://telemetry.subspace.network/api
       DISABLE_NODE_LIST: 1
     ports:
       - 127.0.0.1:3000:8000

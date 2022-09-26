@@ -69,9 +69,18 @@ export class Chain extends React.Component<ChainProps, ChainState> {
 
   public render() {
     const { appState, subscribedData } = this.props;
-    const { best, finalized, blockTimestamp, blockAverage, spacePledged } =
-      appState;
+    const {
+      best,
+      finalized,
+      blockTimestamp,
+      blockAverage,
+      spacePledged,
+      uniqueAddressCount,
+    } = appState;
     const { display: currentTab } = this.state;
+
+    // TODO: temporary workaround until we have better way to fetch space pledged for all chains
+    const isGemini = subscribedData?.label === 'Subspace Gemini 2a';
 
     return (
       <div className="Chain">
@@ -84,11 +93,8 @@ export class Chain extends React.Component<ChainProps, ChainState> {
           currentTab={currentTab}
           setDisplay={this.setDisplay}
           hideSettingsNav={this.props.disableNodeViews}
-          spacePledged={
-            subscribedData?.label === 'Subspace Gemini 2a'
-              ? spacePledged
-              : undefined
-          }
+          spacePledged={isGemini ? spacePledged : undefined}
+          uniqueAddressCount={isGemini ? uniqueAddressCount : undefined}
         />
         <div className="Chain-content-container">
           <div className="Chain-content">{this.renderContent()}</div>
