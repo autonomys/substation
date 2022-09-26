@@ -26,7 +26,7 @@ services:
     environment:
       SUBSTRATE_TELEMETRY_URL: wss://telemetry.subspace.network/feed
       SUBSPACE_API_URL: http://telemetry.subspace.network/api
-      DISABLE_NODE_LIST: 0
+      DISABLE_NODE_LIST: 1
     ports:
       - 127.0.0.1:3000:8000
     expose:
@@ -55,10 +55,9 @@ services:
     command: [
       'telemetry_core',
       '--listen', '0.0.0.0:8000',
-      '--max-third-party-nodes', '100000'
+      '--max-third-party-nodes', '100000',
+      '--update-every', '1',
     ]
-    environment:
-      OMIT_NODE_DATA: 0
     ports:
       - 127.0.0.1:8000:8000
     expose:

@@ -22,6 +22,7 @@ use futures::{future, Sink, SinkExt};
 use std::net::IpAddr;
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
+use std::time::Duration;
 
 id_type! {
     /// A unique Id is assigned per websocket connection (or more accurately,
@@ -44,6 +45,8 @@ pub struct AggregatorOpts {
     /// How many nodes from third party chains are allowed to connect
     /// before we prevent connections from them.
     pub max_third_party_nodes: usize,
+    /// Send updates periodically
+    pub update_every: Option<Duration>,
 }
 
 struct AggregatorInternal {
@@ -61,25 +64,63 @@ struct AggregatorInternal {
 
 impl Aggregator {
     /// Spawn a new Aggregator. This connects to the telemetry backend
-    pub async fn spawn(opts: AggregatorOpts) -> anyhow::Result<Aggregator> {
+    pub async fn spawn(
+        AggregatorOpts {
+            denylist,
+            max_queue_len,
+            max_third_party_nodes,
+            update_every,
+        }: AggregatorOpts,
+    ) -> anyhow::Result<Aggregator> {
         let (tx_to_aggregator, rx_from_external) = flume::unbounded();
 
-        // Kick off a locator task to locate nodes, which hands back a channel to make location requests
-        let tx_to_locator =
-            find_location(tx_to_aggregator.clone().into_sink().with(|(node_id, msg)| {
-                future::ok::<_, flume::SendError<_>>(inner_loop::ToAggregator::FromFindLocation(
-                    node_id, msg,
-                ))
-            }));
+        match update_every {
+            None => {
+                // Kick off a locator task to locate nodes, which hands back a channel to make location requests
+                let tx_to_locator =
+                    find_location(tx_to_aggregator.clone().into_sink().with(|(node_id, msg)| {
+                        future::ok::<_, flume::SendError<_>>(
+                            inner_loop::ToAggregator::FromFindLocation(node_id, msg),
+                        )
+                    }));
 
-        // Handle any incoming messages in our handler loop:
-        tokio::spawn(Aggregator::handle_messages(
-            rx_from_external,
-            tx_to_locator,
-            opts.max_queue_len,
-            opts.denylist,
-            opts.max_third_party_nodes,
-        ));
+                // Handle any incoming messages in our handler loop:
+                tokio::spawn(Aggregator::handle_messages(
+                    rx_from_external,
+                    tx_to_locator.into_sink(),
+                    max_queue_len,
+                    denylist,
+                    max_third_party_nodes,
+                    true,
+                ));
+            }
+            Some(update_every) => {
+                tokio::task::spawn({
+                    let tx_to_aggregator = tx_to_aggregator.clone();
+                    let mut timer = tokio::time::interval(update_every);
+                    // First tick is instant
+                    timer.tick().await;
+
+                    async move {
+                        while let Ok(()) =
+                            tx_to_aggregator.send(inner_loop::ToAggregator::SendUpdates)
+                        {
+                            timer.tick().await;
+                        }
+                    }
+                });
+
+                // Handle any incoming messages in our handler loop:
+                tokio::spawn(Aggregator::handle_messages(
+                    rx_from_external,
+                    futures::sink::drain(),
+                    max_queue_len,
+                    denylist,
+                    max_third_party_nodes,
+                    false,
+                ));
+            }
+        }
 
         // Return a handle to our aggregator:
         Ok(Aggregator(Arc::new(AggregatorInternal {
@@ -92,20 +133,24 @@ impl Aggregator {
     /// This is spawned into a separate task and handles any messages coming
     /// in to the aggregator. If nobody is holding the tx side of the channel
     /// any more, this task will gracefully end.
-    async fn handle_messages(
+    async fn handle_messages<A>(
         rx_from_external: flume::Receiver<inner_loop::ToAggregator>,
-        tx_to_aggregator: flume::Sender<(NodeId, IpAddr)>,
+        tx_to_aggregator: A,
         max_queue_len: usize,
         denylist: Vec<String>,
         max_third_party_nodes: usize,
-    ) {
+        send_node_data: bool,
+    ) where
+        A: Sink<(NodeId, IpAddr)> + Send + Unpin + 'static,
+    {
         inner_loop::InnerLoop::new(
             tx_to_aggregator,
             denylist,
             max_queue_len,
             max_third_party_nodes,
+            send_node_data,
         )
-        .handle(rx_from_external)
+        .handle(rx_from_external.into_stream())
         .await;
     }
 

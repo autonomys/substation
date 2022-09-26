@@ -82,6 +82,13 @@ struct Opts {
     /// How many nodes from third party chains are allowed to connect before we prevent connections from them.
     #[structopt(long, default_value = "1000")]
     max_third_party_nodes: usize,
+    /// Send updates periodically (in seconds).
+    #[structopt(long, parse(try_from_str = parse_duration))]
+    update_every: Option<Duration>,
+}
+
+fn parse_duration(arg: &str) -> Result<Duration, std::num::ParseIntError> {
+    arg.parse().map(Duration::from_secs)
 }
 
 fn main() {
@@ -124,21 +131,30 @@ fn main() {
 }
 
 /// Declare our routes and start the server.
-async fn start_server(num_aggregators: usize, opts: Opts) -> anyhow::Result<()> {
-    let aggregator_queue_len = opts.aggregator_queue_len.unwrap_or(10_000);
+async fn start_server(
+    num_aggregators: usize,
+    Opts {
+        socket,
+        denylist,
+        feed_timeout,
+        aggregator_queue_len,
+        max_third_party_nodes,
+        update_every,
+        ..
+    }: Opts,
+) -> anyhow::Result<()> {
     let aggregator = AggregatorSet::spawn(
         num_aggregators,
         AggregatorOpts {
-            max_queue_len: aggregator_queue_len,
-            denylist: opts.denylist,
-            max_third_party_nodes: opts.max_third_party_nodes,
+            max_queue_len: aggregator_queue_len.unwrap_or(10_000),
+            denylist,
+            max_third_party_nodes,
+            update_every,
         },
     )
     .await?;
-    let socket_addr = opts.socket;
-    let feed_timeout = opts.feed_timeout;
 
-    let server = http_utils::start_server(socket_addr, move |addr, req| {
+    let server = http_utils::start_server(socket, move |addr, req| {
         let aggregator = aggregator.clone();
         async move {
             match (req.method(), req.uri().path().trim_end_matches('/')) {
