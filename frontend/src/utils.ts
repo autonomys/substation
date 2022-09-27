@@ -129,15 +129,10 @@ export function getSVGShadowRoot(): SVGSVGElement {
 }
 
 export async function fetchMetadata() {
-  try {
-    const url =
-      (window.process_env && window.process_env['SUBSPACE_API_URL']) ||
-      'http://localhost:8080/api';
-    const response = await fetch(url);
-    const json = await response.json();
-    return json;
-  } catch (error) {
-    console.log(`Failed to fetch unique address count: ${error}`);
-    return 0;
-  }
+  const url =
+    (window.process_env && window.process_env['SUBSPACE_API_URL']) ||
+    'http://localhost:8080/api';
+  const response = await fetch(url);
+  const json = await response.json();
+  return json;
 }

@@ -136,12 +136,19 @@ export default class App extends React.Component {
   }
 
   private async updateMetadata() {
-    const { uniqueAddressCount, spacePledged } = await fetchMetadata();
+    try {
+      const { uniqueAddressCount, spacePledged } = await fetchMetadata();
 
-    this.appUpdate({
-      spacePledged: parseInt(spacePledged, 10),
-      uniqueAddressCount: parseInt(uniqueAddressCount, 10),
-    });
+      this.appUpdate({
+        spacePledged: parseInt(spacePledged, 10),
+        uniqueAddressCount: parseInt(uniqueAddressCount, 10),
+      });
+
+      setTimeout(async () => await this.updateMetadata(), 10000);
+    } catch (error) {
+      // if data is missing components are not rendered inside Header.tsx
+      console.log(`Failed to fetch unique address count: ${error}`);
+    }
   }
 
   public render() {
@@ -200,7 +207,6 @@ export default class App extends React.Component {
     window.addEventListener('hashchange', this.onHashChange);
 
     await this.updateMetadata();
-    setInterval(async () => await this.updateMetadata(), 10000);
   }
 
   public componentWillUnmount() {
