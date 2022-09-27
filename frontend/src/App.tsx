@@ -143,12 +143,12 @@ export default class App extends React.Component {
         spacePledged: parseInt(spacePledged, 10),
         uniqueAddressCount: parseInt(uniqueAddressCount, 10),
       });
-
-      setTimeout(async () => await this.updateMetadata(), 10000);
     } catch (error) {
       // if data is missing components are not rendered inside Header.tsx
       console.log(`Failed to fetch unique address count: ${error}`);
     }
+
+    setTimeout(async () => await this.updateMetadata(), 10000);
   }
 
   public render() {
