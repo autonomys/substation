@@ -29,7 +29,7 @@ import {
   comparePinnedChains,
   StateSettings,
 } from './state';
-import { getHashData } from './utils';
+import { getHashData, fetchMetadata } from './utils';
 
 import './App.css';
 
@@ -135,6 +135,22 @@ export default class App extends React.Component {
     setInterval(() => (this.chainsCache = []), 10000); // Wipe sorted chains cache every 10 seconds
   }
 
+  private async updateMetadata() {
+    try {
+      const { uniqueAddressCount, spacePledged } = await fetchMetadata();
+
+      this.appUpdate({
+        spacePledged: parseInt(spacePledged, 10),
+        uniqueAddressCount: parseInt(uniqueAddressCount, 10),
+      });
+    } catch (error) {
+      // if data is missing components are not rendered inside Header.tsx
+      console.error(`Failed to fetch unique address count: ${error}`);
+    }
+
+    setTimeout(async () => await this.updateMetadata(), 10000);
+  }
+
   public render() {
     const { timeDiff, subscribed, status, tab } = this.appState;
     const chains = this.chains();
@@ -186,9 +202,11 @@ export default class App extends React.Component {
     );
   }
 
-  public componentDidMount() {
+  public async componentDidMount() {
     window.addEventListener('keydown', this.onKeyPress);
     window.addEventListener('hashchange', this.onHashChange);
+
+    await this.updateMetadata();
   }
 
   public componentWillUnmount() {
