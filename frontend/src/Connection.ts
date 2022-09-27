@@ -16,7 +16,7 @@
 import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from './common';
 import { State, Update, Node, ChainData, PINNED_CHAINS } from './state';
 import { PersistentSet } from './persist';
-import { getHashData, setHashData, fetchMetadata } from './utils';
+import { getHashData, setHashData } from './utils';
 import { ACTIONS } from './common/feed';
 
 const CONNECTION_TIMEOUT_BASE = (1000 * 5) as Types.Milliseconds; // 5 seconds
@@ -166,14 +166,10 @@ export class Connection {
 
           nodes.mutEachAndSort((node) => node.newBestBlock());
 
-          const { uniqueAddressCount, spacePledged } = await fetchMetadata();
-
           this.appUpdate({
             best,
             blockTimestamp,
             blockAverage,
-            spacePledged: parseInt(spacePledged, 10),
-            uniqueAddressCount: parseInt(uniqueAddressCount, 10),
           });
 
           break;
