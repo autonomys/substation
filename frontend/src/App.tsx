@@ -145,7 +145,7 @@ export default class App extends React.Component {
       });
     } catch (error) {
       // if data is missing components are not rendered inside Header.tsx
-      console.log(`Failed to fetch unique address count: ${error}`);
+      console.error(`Failed to fetch unique address count: ${error}`);
     }
 
     setTimeout(async () => await this.updateMetadata(), 10000);
