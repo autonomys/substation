@@ -13,7 +13,8 @@ services:
       - 127.0.0.1:8080:8080
     expose:
       - 8080
-  telemetry-frontend:
+
+  frontend:
     build:
       dockerfile: Dockerfile
       context: ./frontend/
@@ -31,7 +32,8 @@ services:
       - 127.0.0.1:3000:8000
     expose:
       - 3000
-  telemetry-backend-shard:
+
+  shard0: &shard
     build:
       dockerfile: Dockerfile
       context: ./backend/
@@ -39,14 +41,22 @@ services:
     read_only: true
     command: [
       'telemetry_shard',
-      '--listen', '0.0.0.0:8001',
-      '--core', 'http://telemetry-backend-core:8000/shard_submit'
+      '--listen', '0.0.0.0:80',
+      '--core', 'http://core:8000/shard_submit'
     ]
     ports:
-      - 127.0.0.1:8001:8001
+      - 127.0.0.1:8001:80
     expose:
       - 8001
-  telemetry-backend-core:
+
+  shard1:
+    <<: *shard
+    ports:
+      - 127.0.0.1:8002:80
+    expose:
+      - 8002
+
+  core:
     build:
       dockerfile: Dockerfile
       context: ./backend/
