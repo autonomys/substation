@@ -58,7 +58,7 @@ const ABOUT: &str = "This is the Telemetry Backend Shard that forwards the \
 struct Opts {
     /// This is the socket address that this shard is listening to. This is restricted to
     /// localhost (127.0.0.1) by default and should be fine for most use cases. If
-    /// you are using Telemetry in a container, you likely want to set this to '0.0.0.0:8000'
+    /// you are using Telemetry in a container, you likely want to set this to '0.0.0.0:8001'
     #[structopt(short = "l", long = "listen", default_value = "127.0.0.1:8001")]
     socket: std::net::SocketAddr,
     /// The desired log level; one of 'error', 'warn', 'info', 'debug' or 'trace', where
