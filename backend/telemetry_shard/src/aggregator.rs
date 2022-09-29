@@ -21,10 +21,14 @@ use common::{
     node_types::BlockHash,
     AssignId,
 };
-use futures::{Sink, SinkExt};
-use std::collections::{HashMap, HashSet};
+use futures::{stream::FuturesUnordered, Sink, SinkExt, StreamExt};
+use rand::prelude::SliceRandom;
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
+use std::{
+    collections::{HashMap, HashSet},
+    num::NonZeroUsize,
+};
 
 /// A unique Id is assigned per websocket connection (or more accurately,
 /// per thing-that-subscribes-to-the-aggregator). That connection might send
@@ -86,7 +90,7 @@ pub type FromAggregator = internal_messages::FromShardAggregator;
 /// The aggregator loop handles incoming messages from nodes, or from the telemetry core.
 /// this is where we decide what effect messages will have.
 #[derive(Clone)]
-pub struct Aggregator(Arc<AggregatorInternal>);
+pub struct Aggregator(Arc<Vec<AggregatorInternal>>);
 
 struct AggregatorInternal {
     /// Nodes that connect are each assigned a unique connection ID. Nodes
@@ -101,8 +105,7 @@ struct AggregatorInternal {
 }
 
 impl Aggregator {
-    /// Spawn a new Aggregator. This connects to the telemetry backend
-    pub async fn spawn(telemetry_uri: http::Uri) -> anyhow::Result<Aggregator> {
+    async fn aggregator(telemetry_uri: http::Uri) -> flume::Sender<ToAggregator> {
         let (tx_to_aggregator, rx_from_external) = flume::bounded(10);
 
         // Establish a resiliant connection to the core (this retries as needed):
@@ -110,17 +113,19 @@ impl Aggregator {
             create_ws_connection_to_core(telemetry_uri).await;
 
         // Forward messages from the telemetry core into the aggregator:
-        let tx_to_aggregator2 = tx_to_aggregator.clone();
-        tokio::spawn(async move {
-            while let Ok(msg) = rx_from_telemetry_core.recv_async().await {
-                let msg_to_aggregator = match msg {
-                    Message::Connected => ToAggregator::ConnectedToTelemetryCore,
-                    Message::Disconnected => ToAggregator::DisconnectedFromTelemetryCore,
-                    Message::Data(data) => ToAggregator::FromTelemetryCore(data),
-                };
-                if let Err(_) = tx_to_aggregator2.send_async(msg_to_aggregator).await {
-                    // This will close the ws channels, which themselves log messages.
-                    break;
+        tokio::spawn({
+            let tx_to_aggregator = tx_to_aggregator.clone();
+            async move {
+                while let Ok(msg) = rx_from_telemetry_core.recv_async().await {
+                    let msg_to_aggregator = match msg {
+                        Message::Connected => ToAggregator::ConnectedToTelemetryCore,
+                        Message::Disconnected => ToAggregator::DisconnectedFromTelemetryCore,
+                        Message::Data(data) => ToAggregator::FromTelemetryCore(data),
+                    };
+                    if let Err(_) = tx_to_aggregator.send_async(msg_to_aggregator).await {
+                        // This will close the ws channels, which themselves log messages.
+                        break;
+                    }
                 }
             }
         });
@@ -130,12 +135,26 @@ impl Aggregator {
             rx_from_external,
             tx_to_telemetry_core,
         ));
+        tx_to_aggregator
+    }
 
-        // Return a handle to our aggregator so that we can send in messages to it:
-        Ok(Aggregator(Arc::new(AggregatorInternal {
-            conn_id: AtomicU64::new(1),
-            tx_to_aggregator,
-        })))
+    /// Spawn a new Aggregator. This connects to the telemetry backend
+    pub async fn spawn(
+        telemetry_uri: http::Uri,
+        aggregators: NonZeroUsize,
+    ) -> anyhow::Result<Aggregator> {
+        let aggregators = std::iter::repeat_with(|| telemetry_uri.clone())
+            .take(aggregators.get())
+            .map(Self::aggregator)
+            .collect::<FuturesUnordered<_>>()
+            .map(|tx_to_aggregator| AggregatorInternal {
+                conn_id: AtomicU64::new(1),
+                tx_to_aggregator,
+            })
+            .collect()
+            .await;
+
+        Ok(Aggregator(Arc::new(aggregators)))
     }
 
     // This is spawned into a separate task and handles any messages coming
@@ -298,20 +317,21 @@ impl Aggregator {
 
     /// Return a sink that a node can send messages into to be handled by the aggregator.
     pub fn subscribe_node(&self) -> impl Sink<FromWebsocket, Error = anyhow::Error> + Unpin {
+        let aggregator = self
+            .0
+            .choose(&mut rand::thread_rng())
+            .expect("Always at least one is available");
+
         // Assign a unique aggregator-local ID to each connection that subscribes, and pass
         // that along with every message to the aggregator loop:
-        let conn_id: ConnId = self
-            .0
+        let conn_id: ConnId = aggregator
             .conn_id
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        let tx_to_aggregator = self.0.tx_to_aggregator.clone();
 
-        // Calling `send` on this Sink requires Unpin. There may be a nicer way than this,
-        // but pinning by boxing is the easy solution for now:
-        Box::pin(
-            tx_to_aggregator
-                .into_sink()
-                .with(move |msg| async move { Ok(ToAggregator::FromWebsocket(conn_id, msg)) }),
-        )
+        aggregator
+            .tx_to_aggregator
+            .clone()
+            .into_sink()
+            .with(move |msg| futures::future::ok(ToAggregator::FromWebsocket(conn_id, msg)))
     }
 }

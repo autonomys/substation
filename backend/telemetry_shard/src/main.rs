@@ -24,6 +24,7 @@ mod real_ip;
 use std::{
     collections::HashMap,
     net::IpAddr,
+    num::NonZeroUsize,
     time::{Duration, Instant},
 };
 
@@ -72,6 +73,9 @@ struct Opts {
         default_value = "ws://127.0.0.1:8000/shard_submit/"
     )]
     core_url: Uri,
+    /// Number of aggregators
+    #[structopt(short = "c", long = "core", default_value = "1")]
+    aggregators: NonZeroUsize,
     /// How many different nodes is a given connection to the /submit endpoint allowed to
     /// tell us about before we ignore the rest?
     ///
@@ -138,7 +142,7 @@ fn main() {
 /// Declare our routes and start the server.
 async fn start_server(opts: Opts) -> anyhow::Result<()> {
     let block_list = BlockedAddrs::new(Duration::from_secs(opts.node_block_seconds));
-    let aggregator = Aggregator::spawn(opts.core_url).await?;
+    let aggregator = Aggregator::spawn(opts.core_url, opts.aggregators).await?;
     let socket_addr = opts.socket;
     let max_nodes_per_connection = opts.max_nodes_per_connection;
     let bytes_per_second = opts.max_node_data_per_second;
