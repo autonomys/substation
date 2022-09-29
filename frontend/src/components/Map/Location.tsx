@@ -46,7 +46,11 @@ export class Location extends React.Component<LocationProps, LocationState> {
     const { position, nodeCount } = this.props;
     const { left, top, quarter } = position;
     const className = `Location Location-quarter${quarter}`;
-    const size = 6 * (1 + nodeCount / 100); // 6px is default size for single node dot
+    
+    // location dots have logarithmic scale
+    // 6px is default size for a single node dot, 
+    // log of 1 is 0, so we have fallback value of 1
+    const size = 6 * (Math.log(nodeCount) || 1);
 
     return (
       <div
