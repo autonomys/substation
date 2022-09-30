@@ -49,13 +49,6 @@ services:
     expose:
       - 8001
 
-  shard1:
-    <<: *shard
-    ports:
-      - 127.0.0.1:8002:80
-    expose:
-      - 8002
-
   core:
     build:
       dockerfile: Dockerfile
