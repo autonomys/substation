@@ -13,6 +13,7 @@ use common::{
     node_message::{self, AfgAuthoritySet, Finalized, SystemConnected, SystemInterval},
     node_types::{Block, BlockHash, NodeDetails},
 };
+use itertools::Itertools;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Default, Clone)]
@@ -112,72 +113,98 @@ impl State {
         feed
     }
 
+    const MSGS_PER_WS_MSG: usize = 64;
+
     /// Method which would return updates for each chain with its genesis hash
     pub fn drain_chain_updates(
         &'_ mut self,
-    ) -> impl Iterator<Item = (BlockHash, FeedMessageSerializer)> + '_ {
+    ) -> impl Iterator<Item = (BlockHash, Vec<FeedMessageSerializer>)> + '_ {
         self.prev.clone_from(&self.next);
         self.chains
             .iter_mut()
             .filter(|(_, updates)| updates.node_count != 0)
             .map(|(genesis_hash, updates)| {
-                let mut feed = FeedMessageSerializer::new();
+                let mut vec = vec![];
 
-                for removed_node in std::mem::take(&mut updates.removed_nodes) {
-                    feed.push(feed_message::RemovedNode(
-                        removed_node.get_chain_node_id().into(),
-                    ));
+                for removed_nodes in &std::mem::take(&mut updates.removed_nodes)
+                    .into_iter()
+                    .chunks(Self::MSGS_PER_WS_MSG)
+                {
+                    let mut feed = FeedMessageSerializer::new();
+                    for removed_node in removed_nodes {
+                        feed.push(feed_message::RemovedNode(
+                            removed_node.get_chain_node_id().into(),
+                        ));
+                    }
+                    vec.push(feed);
                 }
-                for (added_node_id, node) in std::mem::take(&mut updates.added_nodes) {
-                    feed.push(feed_message::AddedNode(
-                        added_node_id.get_chain_node_id().into(),
-                        &node,
-                    ));
-                }
-                for (node_id, updates) in std::mem::take(&mut updates.updated_nodes) {
-                    use node_message::Payload::*;
 
-                    if let Some(loc) = updates.location {
-                        feed.push(feed_message::LocatedNode(
-                            node_id.get_chain_node_id().into(),
-                            loc.latitude,
-                            loc.longitude,
-                            &loc.city,
-                        ))
+                for added_nodes in &std::mem::take(&mut updates.added_nodes)
+                    .into_iter()
+                    .chunks(Self::MSGS_PER_WS_MSG)
+                {
+                    let mut feed = FeedMessageSerializer::new();
+                    for (added_node_id, node) in added_nodes {
+                        feed.push(feed_message::AddedNode(
+                            added_node_id.get_chain_node_id().into(),
+                            &node,
+                        ));
                     }
-
-                    // TODO: decouple updating and serializing in a nice way.
-                    if let Some(connected) = updates.system_connected {
-                        self.next.update_node(
-                            node_id.clone(),
-                            &SystemConnected(connected),
-                            &mut feed,
-                        );
-                    }
-                    if let Some(interval) = updates.system_interval {
-                        self.next.update_node(
-                            node_id.clone(),
-                            &SystemInterval(interval),
-                            &mut feed,
-                        );
-                    }
-                    if let Some(import) = updates.block_import {
-                        self.next
-                            .update_node(node_id.clone(), &BlockImport(import), &mut feed);
-                    }
-                    if let Some(finalized) = updates.notify_finalized {
-                        self.next.update_node(
-                            node_id.clone(),
-                            &NotifyFinalized(finalized),
-                            &mut feed,
-                        );
-                    }
-                    if let Some(authority) = updates.afg_authority_set {
-                        self.next
-                            .update_node(node_id, &AfgAuthoritySet(authority), &mut feed);
-                    }
+                    vec.push(feed);
                 }
-                (*genesis_hash, feed)
+
+                for updated_nodes in &std::mem::take(&mut updates.updated_nodes)
+                    .into_iter()
+                    .chunks(Self::MSGS_PER_WS_MSG)
+                {
+                    let mut feed = FeedMessageSerializer::new();
+                    for (node_id, updates) in updated_nodes {
+                        use node_message::Payload::*;
+
+                        if let Some(loc) = updates.location {
+                            feed.push(feed_message::LocatedNode(
+                                node_id.get_chain_node_id().into(),
+                                loc.latitude,
+                                loc.longitude,
+                                &loc.city,
+                            ))
+                        }
+
+                        // TODO: decouple updating and serializing in a nice way.
+                        if let Some(connected) = updates.system_connected {
+                            self.next.update_node(
+                                node_id.clone(),
+                                &SystemConnected(connected),
+                                &mut feed,
+                            );
+                        }
+                        if let Some(interval) = updates.system_interval {
+                            self.next.update_node(
+                                node_id.clone(),
+                                &SystemInterval(interval),
+                                &mut feed,
+                            );
+                        }
+                        if let Some(import) = updates.block_import {
+                            self.next
+                                .update_node(node_id.clone(), &BlockImport(import), &mut feed);
+                        }
+                        if let Some(finalized) = updates.notify_finalized {
+                            self.next.update_node(
+                                node_id.clone(),
+                                &NotifyFinalized(finalized),
+                                &mut feed,
+                            );
+                        }
+                        if let Some(authority) = updates.afg_authority_set {
+                            self.next
+                                .update_node(node_id, &AfgAuthoritySet(authority), &mut feed);
+                        }
+                    }
+                    vec.push(feed)
+                }
+
+                (*genesis_hash, vec)
             })
     }
 
@@ -379,7 +406,7 @@ impl State {
                 .nodes_slice()
                 .par_iter()
                 .enumerate()
-                .chunks(64)
+                .chunks(Self::MSGS_PER_WS_MSG)
                 .filter_map(|nodes| {
                     let mut feed_serializer = FeedMessageSerializer::new();
                     for (node_id, node) in nodes

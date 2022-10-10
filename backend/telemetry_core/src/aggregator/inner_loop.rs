@@ -258,8 +258,10 @@ impl InnerLoop {
     }
 
     fn send_updates(&mut self) {
-        for (genesis_hash, feed) in self.node_state.drain_chain_updates().collect::<Vec<_>>() {
-            self.finalize_and_broadcast_to_chain_feeds(&genesis_hash, feed);
+        for (genesis_hash, feeds) in self.node_state.drain_chain_updates().collect::<Vec<_>>() {
+            for feed in feeds {
+                self.finalize_and_broadcast_to_chain_feeds(&genesis_hash, feed);
+            }
         }
         let feed_for_all = self.node_state.drain_updates_for_all_feeds();
         self.finalize_and_broadcast_to_all_feeds(feed_for_all);

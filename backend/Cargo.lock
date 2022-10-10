@@ -1642,6 +1642,7 @@ dependencies = [
  "hex",
  "http",
  "hyper",
+ "itertools",
  "jemallocator",
  "log",
  "maxminddb",
