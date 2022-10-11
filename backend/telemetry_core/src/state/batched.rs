@@ -31,6 +31,7 @@ struct NodeUpdates {
 struct ChainUpdates {
     /// Current node count
     node_count: usize,
+    highest_node_count: usize,
     has_chain_label_changed: bool,
     /// Current chain label
     chain_label: Box<str>,
@@ -91,6 +92,7 @@ impl State {
         for (genesis_hash, chain_updates) in &mut self.chains {
             let ChainUpdates {
                 node_count,
+                highest_node_count,
                 has_chain_label_changed,
                 chain_label,
                 ..
@@ -105,6 +107,7 @@ impl State {
                 chain_label,
                 *genesis_hash,
                 *node_count,
+                *highest_node_count,
             ));
         }
         for genesis_hash in std::mem::take(&mut self.removed_chains) {
@@ -241,6 +244,7 @@ impl State {
 
         updates.has_chain_label_changed = has_chain_label_changed;
         updates.node_count = chain_node_count;
+        updates.highest_node_count = updates.highest_node_count.max(chain_node_count);
         updates.chain_label = new_chain_label.to_owned().into_boxed_str();
 
         Ok(node_id)

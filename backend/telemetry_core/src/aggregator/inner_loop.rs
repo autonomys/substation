@@ -351,6 +351,7 @@ impl InnerLoop {
                         chain.label(),
                         chain.genesis_hash(),
                         chain.node_count(),
+                        chain.highest_node_count(),
                     ));
                 }
 

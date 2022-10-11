@@ -183,7 +183,7 @@ pub struct Hardware<'a>(pub FeedNodeId, pub &'a NodeHardware);
 pub struct TimeSync(pub u64);
 
 #[derive(Serialize)]
-pub struct AddedChain<'a>(pub &'a str, pub BlockHash, pub usize);
+pub struct AddedChain<'a>(pub &'a str, pub BlockHash, pub usize, pub usize);
 
 #[derive(Serialize)]
 pub struct RemovedChain(pub BlockHash);
