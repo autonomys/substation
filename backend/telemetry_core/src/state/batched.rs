@@ -16,7 +16,7 @@ use common::{
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{hash_map::Entry, HashMap, HashSet},
     path::PathBuf,
 };
 
@@ -41,10 +41,18 @@ struct Metadata {
 }
 
 impl Metadata {
-    fn update<'a>(&mut self, chains: impl IntoIterator<Item = (&'a BlockHash, &'a ChainUpdates)>) {
+    fn update<'a>(
+        &mut self,
+        chains: impl IntoIterator<Item = (&'a BlockHash, &'a ChainUpdates)>,
+    ) -> bool {
+        let mut updated = false;
         for (hash, chain) in chains {
-            self.chains.entry(*hash).or_default().highest_node_count = chain.highest_node_count;
+            let entry = self.chains.entry(*hash);
+            updated |= matches!(entry, Entry::Vacant(_))
+                | matches!(&entry, Entry::Occupied(entry) if entry.get().highest_node_count != chain.highest_node_count);
+            entry.or_default().highest_node_count = chain.highest_node_count;
         }
+        updated
     }
 }
 
@@ -140,13 +148,14 @@ impl State {
 
     /// Drain updates for all feeds and return serializer.
     pub fn drain_updates_for_all_feeds(&mut self) -> FeedMessageSerializer {
-        self.metadata.update(&self.chains);
-        if let Some(path) = &self.metadata_path {
-            if let Err(err) = serde_json::to_vec(&self.metadata)
-                .map_err(anyhow::Error::from)
-                .and_then(|bytes| std::fs::write(path, bytes).map_err(anyhow::Error::from))
-            {
-                log::error!("Failed to save metadata: {err}");
+        if self.metadata.update(&self.chains) {
+            if let Some(path) = &self.metadata_path {
+                if let Err(err) = serde_json::to_vec(&self.metadata)
+                    .map_err(anyhow::Error::from)
+                    .and_then(|bytes| std::fs::write(path, bytes).map_err(anyhow::Error::from))
+                {
+                    log::error!("Failed to save metadata: {err}");
+                }
             }
         }
 

@@ -25,7 +25,7 @@ services:
       - /var/run:uid=101,gid=101
       - /app/tmp:uid=101,gid=101
     environment:
-      SUBSTRATE_TELEMETRY_URL: wss://telemetry.subspace.network/feed 
+      SUBSTRATE_TELEMETRY_URL: wss://telemetry.subspace.network/feed
       SUBSPACE_API_URL: https://telemetry.subspace.network/api
       DISABLE_NODE_LIST: 0
     ports:
@@ -67,18 +67,14 @@ services:
       '--listen', '0.0.0.0:8000',
       '--max-third-party-nodes', '100000',
       '--update-every', '1',
-      '--metadata-path', '/metadata/metadata.json',
+      '--metadata-path', '/var/telemetry_core/metadata.json',
     ]
     volumes:
-      - telemetry-core-metadata:/metadata
+      - core-metadata:/var/telemetry_core
     ports:
       - 127.0.0.1:8000:8000
     expose:
       - 8000
 
 volumes:
-  # Just create it with:
-  # $ docker volume create telemetry-core-metadata
-  # $ docker run -it -v telemetry-core-metadata:/m alpine chown 1000:1000 /m 
-  telemetry-core-metadata:
-    external: true
+  core-metadata:
