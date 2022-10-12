@@ -34,7 +34,9 @@ import { getHashData, fetchMetadata } from './utils';
 import './App.css';
 
 // DISABLE_NODE_LIST env variable is added to window.process_env in scripts/env.sh, it's not available in process.env
-const DISABLE_NODE_LIST = window.process_env ? window.process_env['DISABLE_NODE_LIST'] === '1' : false;
+const DISABLE_NODE_LIST = window.process_env
+  ? window.process_env['DISABLE_NODE_LIST'] === '1'
+  : false;
 
 export default class App extends React.Component {
   private chainsCache: ChainData[] = [];
