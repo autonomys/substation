@@ -47,10 +47,22 @@ impl Metadata {
     ) -> bool {
         let mut updated = false;
         for (hash, chain) in chains {
-            let entry = self.chains.entry(*hash);
-            updated |= matches!(entry, Entry::Vacant(_))
-                | matches!(&entry, Entry::Occupied(entry) if entry.get().highest_node_count != chain.highest_node_count);
-            entry.or_default().highest_node_count = chain.highest_node_count;
+            match self.chains.entry(*hash) {
+                Entry::Vacant(entry) => {
+                    updated = true;
+                    entry.insert(ChainMetadata {
+                        highest_node_count: chain.highest_node_count,
+                    });
+                }
+                Entry::Occupied(mut entry) => {
+                    if entry.get().highest_node_count != chain.highest_node_count {
+                        updated = true;
+                        entry.insert(ChainMetadata {
+                            highest_node_count: chain.highest_node_count,
+                        });
+                    }
+                }
+            }
         }
         updated
     }

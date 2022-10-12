@@ -27,6 +27,7 @@ RUN useradd -m -u 1000 -U telemetry && \
     rm -rf /var/lib/apt/lists/ && \
     mkdir /var/telemetry_core && \
     chown telemetry:nogroup /var/telemetry_core
+VOLUME /var/subspace
 
 USER telemetry
 EXPOSE 8000
