@@ -17,6 +17,7 @@
 use super::inner_loop;
 use common::id_type;
 use futures::{Sink, SinkExt};
+use std::path::PathBuf;
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 use std::time::Duration;
@@ -46,6 +47,7 @@ pub struct AggregatorOpts {
     pub update_every: Duration,
     /// Should we send node data?
     pub send_node_data: bool,
+    pub metadata_path: Option<PathBuf>,
 }
 
 struct AggregatorInternal {
@@ -70,6 +72,7 @@ impl Aggregator {
             max_third_party_nodes,
             update_every,
             send_node_data,
+            metadata_path,
         }: AggregatorOpts,
     ) -> anyhow::Result<Aggregator> {
         let (tx_to_aggregator, rx_from_external) = flume::unbounded();
@@ -94,6 +97,7 @@ impl Aggregator {
             denylist,
             max_third_party_nodes,
             send_node_data,
+            metadata_path,
         ));
 
         // Return a handle to our aggregator:
@@ -113,15 +117,23 @@ impl Aggregator {
         denylist: Vec<String>,
         max_third_party_nodes: usize,
         send_node_data: bool,
+        metadata_path: Option<PathBuf>,
     ) {
-        inner_loop::InnerLoop::new(
+        match inner_loop::InnerLoop::new(
             denylist,
             max_queue_len,
             max_third_party_nodes,
             send_node_data,
-        )
+            metadata_path,
+        ) {
+            Ok(ok) => ok,
+            Err(err) => {
+                log::error!("Inner loop failed to construct: {err}");
+                return;
+            }
+        }
         .handle(rx_from_external.into_stream())
-        .await;
+        .await
     }
 
     /// Gather metrics from our aggregator loop

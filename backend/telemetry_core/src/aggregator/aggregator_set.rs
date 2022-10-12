@@ -3,6 +3,7 @@ use super::inner_loop;
 use common::EitherSink;
 use futures::{Sink, SinkExt};
 use inner_loop::{FromShardWebsocket, Metrics};
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
@@ -19,12 +20,18 @@ impl AggregatorSet {
     /// Spawn the number of aggregators we're asked to.
     pub async fn spawn(
         num_aggregators: usize,
+        metadata_path: Option<PathBuf>,
         opts: AggregatorOpts,
     ) -> anyhow::Result<AggregatorSet> {
         assert_ne!(num_aggregators, 0, "You must have 1 or more aggregator");
 
         let aggregators = futures::future::try_join_all(
-            (0..num_aggregators).map(|_| Aggregator::spawn(opts.clone())),
+            std::iter::once(AggregatorOpts {
+                metadata_path,
+                ..opts.clone()
+            })
+            .chain(std::iter::repeat_with(|| opts.clone()).take(num_aggregators - 1))
+            .map(Aggregator::spawn),
         )
         .await?;
 

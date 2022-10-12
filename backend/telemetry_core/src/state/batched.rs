@@ -14,7 +14,11 @@ use common::{
     node_types::{Block, BlockHash, NodeDetails},
 };
 use itertools::Itertools;
-use std::collections::{HashMap, HashSet};
+use serde::{Deserialize, Serialize};
+use std::{
+    collections::{HashMap, HashSet},
+    path::PathBuf,
+};
 
 #[derive(Default, Clone)]
 struct NodeUpdates {
@@ -24,6 +28,24 @@ struct NodeUpdates {
     notify_finalized: Option<Finalized>,
     afg_authority_set: Option<AfgAuthoritySet>,
     location: Location,
+}
+
+#[derive(Default, Clone, Copy, Deserialize, Serialize)]
+struct ChainMetadata {
+    highest_node_count: usize,
+}
+
+#[derive(Default, Clone, Deserialize, Serialize)]
+struct Metadata {
+    chains: HashMap<BlockHash, ChainMetadata>,
+}
+
+impl Metadata {
+    fn update<'a>(&mut self, chains: impl IntoIterator<Item = (&'a BlockHash, &'a ChainUpdates)>) {
+        for (hash, chain) in chains {
+            self.chains.entry(*hash).or_default().highest_node_count = chain.highest_node_count;
+        }
+    }
 }
 
 /// Structure with accumulated chain updates
@@ -60,6 +82,8 @@ pub struct State {
     /// Removed chains tracker
     removed_chains: HashSet<BlockHash>,
     send_node_data: bool,
+    metadata: Metadata,
+    metadata_path: Option<PathBuf>,
 }
 
 impl State {
@@ -67,16 +91,44 @@ impl State {
         denylist: impl IntoIterator<Item = String>,
         max_third_party_nodes: usize,
         send_node_data: bool,
-    ) -> Self {
-        Self {
+        metadata_path: Option<PathBuf>,
+    ) -> anyhow::Result<Self> {
+        let metadata = if let Some(path) = &metadata_path {
+            if path.exists() {
+                let metadata_str = std::fs::read_to_string(path)?;
+                serde_json::from_str(&metadata_str)?
+            } else {
+                Metadata::default()
+            }
+        } else {
+            Default::default()
+        };
+
+        // Update max node count
+        let chains = metadata
+            .chains
+            .iter()
+            .map(|(hash, ChainMetadata { highest_node_count })| {
+                (
+                    *hash,
+                    ChainUpdates {
+                        highest_node_count: *highest_node_count,
+                        ..Default::default()
+                    },
+                )
+            })
+            .collect();
+        Ok(Self {
             prev: OrdinaryState::new([], max_third_party_nodes),
             next: OrdinaryState::new(denylist, max_third_party_nodes),
-            chains: HashMap::new(),
+            chains,
             node_ids: BiMap::new(),
             chain_nodes: HashMap::new(),
             removed_chains: HashSet::new(),
             send_node_data,
-        }
+            metadata,
+            metadata_path,
+        })
     }
 
     pub fn iter_chains(&self) -> impl Iterator<Item = StateChain<'_>> {
@@ -88,6 +140,16 @@ impl State {
 
     /// Drain updates for all feeds and return serializer.
     pub fn drain_updates_for_all_feeds(&mut self) -> FeedMessageSerializer {
+        self.metadata.update(&self.chains);
+        if let Some(path) = &self.metadata_path {
+            if let Err(err) = serde_json::to_vec(&self.metadata)
+                .map_err(anyhow::Error::from)
+                .and_then(|bytes| std::fs::write(path, bytes).map_err(anyhow::Error::from))
+            {
+                log::error!("Failed to save metadata: {err}");
+            }
+        }
+
         let mut feed = FeedMessageSerializer::new();
         for (genesis_hash, chain_updates) in &mut self.chains {
             let ChainUpdates {

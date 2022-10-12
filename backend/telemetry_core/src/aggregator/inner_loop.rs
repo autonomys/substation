@@ -26,7 +26,9 @@ use common::{
     time, MultiMapUnique,
 };
 use futures::{Stream, StreamExt};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::{
     atomic::{AtomicU64, Ordering},
@@ -151,6 +153,11 @@ pub enum ToFeedWebsocket {
     Bytes(bytes::Bytes),
 }
 
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Copy)]
+struct Metadata {
+    max_node_count: usize,
+}
+
 /// Instances of this are responsible for handling incoming and
 /// outgoing messages in the main aggregator loop.
 pub struct InnerLoop {
@@ -183,16 +190,22 @@ impl InnerLoop {
         max_queue_len: usize,
         max_third_party_nodes: usize,
         send_node_data: bool,
-    ) -> Self {
-        InnerLoop {
-            node_state: BatchedState::new(denylist, max_third_party_nodes, send_node_data),
+        metadata_path: Option<PathBuf>,
+    ) -> anyhow::Result<Self> {
+        Ok(InnerLoop {
+            node_state: BatchedState::new(
+                denylist,
+                max_third_party_nodes,
+                send_node_data,
+                metadata_path,
+            )?,
             node_ids: BiMap::new(),
             feed_channels: HashMap::new(),
             shard_channels: HashMap::new(),
             chain_to_feed_conn_ids: MultiMapUnique::new(),
             locator: Locator::new(Default::default()),
             max_queue_len,
-        }
+        })
     }
 
     /// Start handling and responding to incoming messages.
