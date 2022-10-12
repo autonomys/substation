@@ -107,7 +107,7 @@ export class Header extends React.Component<HeaderProps> {
         <Tile icon={lastTimeIcon} title="Last Block">
           <Ago when={blockTimestamp} />
         </Tile>
-        <Tile icon={nodesIcon} title="Node Count">
+        <Tile icon={nodesIcon} title="Current Node Count">
           {formatNumber(nodeCount)}
         </Tile>
         <Tile icon={rocketIcon} title="Highest Node Count">
