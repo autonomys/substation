@@ -324,8 +324,6 @@ export class Connection {
           const [label, genesisHash, nodeCount, highestNodeCount] = message.payload;
           const chain = chains.get(genesisHash);
 
-          console.log(label, genesisHash, nodeCount, highestNodeCount);
-
           if (chain) {
             chain.nodeCount = nodeCount;
             chain.highestNodeCount = highestNodeCount;
