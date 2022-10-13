@@ -102,7 +102,7 @@ impl State {
                 *node_count,
             ));
         }
-        for genesis_hash in std::mem::take(&mut self.removed_chains) {
+        for genesis_hash in self.removed_chains.drain() {
             feed.push(feed_message::RemovedChain(genesis_hash))
         }
         feed
@@ -120,10 +120,7 @@ impl State {
             .map(|(genesis_hash, updates)| {
                 let mut vec = vec![];
 
-                for removed_nodes in &std::mem::take(&mut updates.removed_nodes)
-                    .into_iter()
-                    .chunks(Self::MSGS_PER_WS_MSG)
-                {
+                for removed_nodes in &updates.removed_nodes.drain().chunks(Self::MSGS_PER_WS_MSG) {
                     let mut feed = FeedMessageSerializer::new();
                     for removed_node in removed_nodes {
                         feed.push(feed_message::RemovedNode(
@@ -133,10 +130,7 @@ impl State {
                     vec.push(feed);
                 }
 
-                for added_nodes in &std::mem::take(&mut updates.added_nodes)
-                    .into_iter()
-                    .chunks(Self::MSGS_PER_WS_MSG)
-                {
+                for added_nodes in &updates.added_nodes.drain().chunks(Self::MSGS_PER_WS_MSG) {
                     let mut feed = FeedMessageSerializer::new();
                     for (added_node_id, node) in added_nodes {
                         feed.push(feed_message::AddedNode(
@@ -147,10 +141,7 @@ impl State {
                     vec.push(feed);
                 }
 
-                for updated_nodes in &std::mem::take(&mut updates.updated_nodes)
-                    .into_iter()
-                    .chunks(Self::MSGS_PER_WS_MSG)
-                {
+                for updated_nodes in &updates.updated_nodes.drain().chunks(Self::MSGS_PER_WS_MSG) {
                     let mut feed = FeedMessageSerializer::new();
                     for (node_id, updates) in updated_nodes {
                         use node_message::Payload::*;
