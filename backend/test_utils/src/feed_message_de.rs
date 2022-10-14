@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+use std::io::Read;
+
 use anyhow::Context;
 use common::node_types::{
     BlockDetails, BlockHash, BlockNumber, NodeLocation, NodeStats, Timestamp,
@@ -139,7 +141,11 @@ pub struct NodeDetails {
 impl FeedMessage {
     /// Decode a slice of bytes into a vector of feed messages
     pub fn from_bytes(bytes: &[u8]) -> Result<Vec<FeedMessage>, anyhow::Error> {
-        let v: Vec<&RawValue> = serde_json::from_slice(bytes)?;
+        let mut decoder = lz4::Decoder::new(bytes)?;
+        let mut buf = Vec::new();
+        let _ = decoder.read_to_end(&mut buf);
+
+        let v: Vec<&RawValue> = serde_json::from_slice(&buf)?;
 
         let mut feed_messages = vec![];
         for raw_keyval in v.chunks(2) {
@@ -357,14 +363,17 @@ impl FeedMessage {
 mod test {
 
     use super::*;
+    use std::io::Write;
 
     #[test]
     fn decode_remove_node_msg() {
         // "remove chain ''":
         let msg = r#"[12,"0x0000000000000000000000000000000000000000000000000000000000000000"]"#;
+        let mut encoder = lz4::EncoderBuilder::new().build(Vec::new()).unwrap();
+        encoder.write(msg.as_ref()).unwrap();
 
         assert_eq!(
-            FeedMessage::from_bytes(msg.as_bytes()).unwrap(),
+            FeedMessage::from_bytes(&encoder.finish().0).unwrap(),
             vec![FeedMessage::RemovedChain {
                 genesis_hash: BlockHash::zero(),
             }]
@@ -375,9 +384,11 @@ mod test {
     fn decode_remove_then_add_node_msg() {
         // "remove chain '', then add chain 'Local Testnet' with 1 node":
         let msg = r#"[12,"0x0000000000000000000000000000000000000000000000000000000000000000",11,["Local Testnet","0x0000000000000000000000000000000000000000000000000000000000000000",1,1]]"#;
+        let mut encoder = lz4::EncoderBuilder::new().build(Vec::new()).unwrap();
+        encoder.write(msg.as_ref()).unwrap();
 
         assert_eq!(
-            FeedMessage::from_bytes(msg.as_bytes()).unwrap(),
+            FeedMessage::from_bytes(&encoder.finish().0).unwrap(),
             vec![
                 FeedMessage::RemovedChain {
                     genesis_hash: BlockHash::zero(),

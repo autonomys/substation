@@ -194,7 +194,7 @@ impl State {
         feed
     }
 
-    const MSGS_PER_WS_MSG: usize = 64;
+    const MSGS_PER_WS_MSG: usize = 1024;
 
     /// Method which would return updates for each chain with its genesis hash
     pub fn drain_chain_updates(
@@ -500,7 +500,7 @@ impl State {
                     }
                     feed_serializer.into_finalized()
                 })
-                .map(ToFeedWebsocket::Bytes)
+                .map(ToFeedWebsocket::new)
                 .collect();
 
             self.chain_nodes
