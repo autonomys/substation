@@ -144,7 +144,7 @@ interface TimeSyncMessage extends MessageBase {
 
 interface AddedChainMessage extends MessageBase {
   action: typeof ACTIONS.AddedChain;
-  payload: [ChainLabel, GenesisHash, NodeCount];
+  payload: [ChainLabel, GenesisHash, NodeCount, NodeCount];
 }
 
 interface RemovedChainMessage extends MessageBase {

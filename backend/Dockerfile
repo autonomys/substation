@@ -24,7 +24,10 @@ RUN useradd -m -u 1000 -U telemetry && \
     apt-get -y install openssl && \
     apt-get autoremove -y && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/
+    rm -rf /var/lib/apt/lists/ && \
+    mkdir /var/telemetry_core && \
+    chown telemetry:nogroup /var/telemetry_core
+VOLUME /var/subspace
 
 USER telemetry
 EXPOSE 8000

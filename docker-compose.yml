@@ -67,8 +67,14 @@ services:
       '--listen', '0.0.0.0:8000',
       '--max-third-party-nodes', '100000',
       '--update-every', '1',
+      '--metadata-path', '/var/telemetry_core/metadata.json',
     ]
+    volumes:
+      - core-metadata:/var/telemetry_core
     ports:
       - 127.0.0.1:8000:8000
     expose:
       - 8000
+
+volumes:
+  core-metadata:

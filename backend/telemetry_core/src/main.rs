@@ -18,6 +18,7 @@ mod aggregator;
 mod feed_message;
 mod find_location;
 mod state;
+use std::path::PathBuf;
 use std::str::FromStr;
 use tokio::time::{Duration, Instant};
 
@@ -88,6 +89,9 @@ struct Opts {
     /// Skip sending node data.
     #[structopt(long)]
     skip_node_data: bool,
+    /// Metadata storage path
+    #[structopt(long)]
+    metadata_path: Option<PathBuf>,
 }
 
 fn parse_duration(arg: &str) -> Result<Duration, std::num::ParseIntError> {
@@ -144,17 +148,20 @@ async fn start_server(
         max_third_party_nodes,
         update_every,
         skip_node_data,
+        metadata_path,
         ..
     }: Opts,
 ) -> anyhow::Result<()> {
     let aggregator = AggregatorSet::spawn(
         num_aggregators,
+        metadata_path,
         AggregatorOpts {
             max_queue_len: aggregator_queue_len.unwrap_or(10_000),
             denylist,
             max_third_party_nodes,
             update_every,
             send_node_data: !skip_node_data,
+            metadata_path: None,
         },
     )
     .await?;

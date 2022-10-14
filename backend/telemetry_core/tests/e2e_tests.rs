@@ -251,6 +251,7 @@ async fn e2e_feed_add_and_remove_node() {
         name: "Local Testnet".to_owned(),
         genesis_hash: ghash(1),
         node_count: 1,
+        max_node_count: 1,
     }));
 
     // Disconnect the node:
@@ -322,7 +323,7 @@ async fn e2e_feeds_told_about_chain_rename_and_stay_subscribed() {
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert_contains_matches!(
         feed_messages,
-        FeedMessage::AddedChain { name, genesis_hash, node_count: 1 } if name == "Initial chain name" && genesis_hash == ghash(1),
+        FeedMessage::AddedChain { name, genesis_hash, node_count: 1, max_node_count: 1 } if name == "Initial chain name" && genesis_hash == ghash(1),
         FeedMessage::SubscribedTo { genesis_hash } if genesis_hash == ghash(1),
         FeedMessage::AddedNode { node: NodeDetails { name: node_name, .. }, ..} if node_name == "Node 1",
     );
@@ -336,7 +337,7 @@ async fn e2e_feeds_told_about_chain_rename_and_stay_subscribed() {
     assert_contains_matches!(
         feed_messages,
         FeedMessage::AddedNode { node: NodeDetails { name: node_name, .. }, ..} if node_name == "Node 2",
-        FeedMessage::AddedChain { name, genesis_hash, node_count: 2 } if name == "Initial chain name" && genesis_hash == ghash(1),
+        FeedMessage::AddedChain { name, genesis_hash, node_count: 2, max_node_count: 2 } if name == "Initial chain name" && genesis_hash == ghash(1),
     );
 
     // Subscribe a third node. The chain renames, so we're told about the new node but also
@@ -349,7 +350,7 @@ async fn e2e_feeds_told_about_chain_rename_and_stay_subscribed() {
         feed_messages,
         FeedMessage::AddedNode { node: NodeDetails { name: node_name, .. }, ..} if node_name == "Node 3",
         FeedMessage::RemovedChain { genesis_hash } if genesis_hash == ghash(1),
-        FeedMessage::AddedChain { name, genesis_hash, node_count: 3 } if name == "New chain name" && genesis_hash == ghash(1),
+        FeedMessage::AddedChain { name, genesis_hash, node_count: 3, max_node_count: 3 } if name == "New chain name" && genesis_hash == ghash(1),
     );
 
     // Just to be sure, subscribing a fourth node on this chain will still lead to updates
@@ -361,7 +362,7 @@ async fn e2e_feeds_told_about_chain_rename_and_stay_subscribed() {
     assert_contains_matches!(
         feed_messages,
         FeedMessage::AddedNode { node: NodeDetails { name: node_name, .. }, ..} if node_name == "Node 4",
-        FeedMessage::AddedChain { name, genesis_hash, node_count: 4 } if name == "New chain name" && genesis_hash == ghash(1),
+        FeedMessage::AddedChain { name, genesis_hash, node_count: 4, max_node_count: 4 } if name == "New chain name" && genesis_hash == ghash(1),
     );
 }
 
@@ -420,12 +421,14 @@ async fn e2e_feed_add_and_remove_shard() {
     assert!(feed_messages.contains(&FeedMessage::AddedChain {
         name: "Local Testnet 1".to_owned(),
         genesis_hash: ghash(1),
-        node_count: 1
+        node_count: 1,
+        max_node_count: 1,
     }));
     assert!(feed_messages.contains(&FeedMessage::AddedChain {
         name: "Local Testnet 2".to_owned(),
         genesis_hash: ghash(2),
-        node_count: 1
+        node_count: 1,
+        max_node_count: 1,
     }));
 
     // Disconnect the first shard:
@@ -495,7 +498,7 @@ async fn e2e_feed_can_subscribe_and_unsubscribe_from_chain() {
     let (feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
 
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
-    assert_contains_matches!(feed_messages, AddedChain { name, genesis_hash, node_count: 1 } if name == "Local Testnet 1" && genesis_hash == ghash(1));
+    assert_contains_matches!(feed_messages, AddedChain { name, genesis_hash, node_count: 1, max_node_count: 1 } if name == "Local Testnet 1" && genesis_hash == ghash(1));
 
     // Subscribe it to a chain
     feed_tx

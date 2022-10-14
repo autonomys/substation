@@ -286,4 +286,5 @@ export interface ChainData {
   label: Types.ChainLabel;
   genesisHash: Types.GenesisHash;
   nodeCount: Types.NodeCount;
+  highestNodeCount: Types.NodeCount;
 }

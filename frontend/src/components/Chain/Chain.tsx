@@ -88,6 +88,7 @@ export class Chain extends React.Component<ChainProps, ChainState> {
           best={best}
           finalized={finalized}
           nodeCount={subscribedData?.nodeCount ?? 0}
+          highestNodeCount={subscribedData?.highestNodeCount ?? 0}
           blockAverage={blockAverage}
           blockTimestamp={blockTimestamp}
           currentTab={currentTab}

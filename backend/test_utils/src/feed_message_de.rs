@@ -75,6 +75,7 @@ pub enum FeedMessage {
         name: String,
         genesis_hash: BlockHash,
         node_count: usize,
+        max_node_count: usize,
     },
     RemovedChain {
         genesis_hash: BlockHash,
@@ -259,11 +260,13 @@ impl FeedMessage {
             }
             // AddedChain
             11 => {
-                let (name, genesis_hash, node_count) = serde_json::from_str(raw_val.get())?;
+                let (name, genesis_hash, node_count, max_node_count) =
+                    serde_json::from_str(raw_val.get())?;
                 FeedMessage::AddedChain {
                     name,
                     genesis_hash,
                     node_count,
+                    max_node_count,
                 }
             }
             // RemovedChain
@@ -371,7 +374,7 @@ mod test {
     #[test]
     fn decode_remove_then_add_node_msg() {
         // "remove chain '', then add chain 'Local Testnet' with 1 node":
-        let msg = r#"[12,"0x0000000000000000000000000000000000000000000000000000000000000000",11,["Local Testnet","0x0000000000000000000000000000000000000000000000000000000000000000",1]]"#;
+        let msg = r#"[12,"0x0000000000000000000000000000000000000000000000000000000000000000",11,["Local Testnet","0x0000000000000000000000000000000000000000000000000000000000000000",1,1]]"#;
 
         assert_eq!(
             FeedMessage::from_bytes(msg.as_bytes()).unwrap(),
@@ -382,7 +385,8 @@ mod test {
                 FeedMessage::AddedChain {
                     name: "Local Testnet".to_owned(),
                     genesis_hash: BlockHash::zero(),
-                    node_count: 1
+                    node_count: 1,
+                    max_node_count: 1,
                 },
             ]
         );

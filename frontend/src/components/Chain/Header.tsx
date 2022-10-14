@@ -31,6 +31,7 @@ import nodesIcon from '../../icons/blockchain-icon.svg';
 import statsIcon from '../../icons/graph.svg';
 import databaseIcon from '../../icons/database.svg';
 import fingerprintIcon from '../../icons/fingerprint.svg';
+import rocketIcon from '../../icons/rocket.svg';
 
 import './Header.css';
 
@@ -38,6 +39,7 @@ interface HeaderProps {
   best: Types.BlockNumber;
   finalized: Types.BlockNumber;
   nodeCount: number;
+  highestNodeCount: number;
   blockTimestamp: Types.Timestamp;
   blockAverage: Maybe<Types.Milliseconds>;
   currentTab: ChainDisplay;
@@ -60,6 +62,7 @@ export class Header extends React.Component<HeaderProps> {
       this.props.blockAverage !== nextProps.blockAverage ||
       this.props.currentTab !== nextProps.currentTab ||
       this.props.nodeCount !== nextProps.nodeCount ||
+      this.props.highestNodeCount !== nextProps.highestNodeCount ||
       this.props.spacePledged !== nextProps.spacePledged ||
       this.props.uniqueAddressCount !== nextProps.uniqueAddressCount
     );
@@ -80,6 +83,7 @@ export class Header extends React.Component<HeaderProps> {
       best,
       finalized,
       nodeCount,
+      highestNodeCount,
       blockTimestamp,
       blockAverage,
       spacePledged,
@@ -103,8 +107,11 @@ export class Header extends React.Component<HeaderProps> {
         <Tile icon={lastTimeIcon} title="Last Block">
           <Ago when={blockTimestamp} />
         </Tile>
-        <Tile icon={nodesIcon} title="Node Count">
+        <Tile icon={nodesIcon} title="Current Node Count">
           {formatNumber(nodeCount)}
+        </Tile>
+        <Tile icon={rocketIcon} title="Highest Node Count">
+          {formatNumber(highestNodeCount)}
         </Tile>
         {uniqueAddressCount ? (
           <Tile icon={fingerprintIcon} title="Unique addresses">

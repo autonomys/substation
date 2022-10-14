@@ -321,13 +321,20 @@ export class Connection {
         }
 
         case ACTIONS.AddedChain: {
-          const [label, genesisHash, nodeCount] = message.payload;
+          const [label, genesisHash, nodeCount, highestNodeCount] =
+            message.payload;
           const chain = chains.get(genesisHash);
 
           if (chain) {
             chain.nodeCount = nodeCount;
+            chain.highestNodeCount = highestNodeCount;
           } else {
-            chains.set(genesisHash, { label, genesisHash, nodeCount });
+            chains.set(genesisHash, {
+              label,
+              genesisHash,
+              nodeCount,
+              highestNodeCount,
+            });
           }
 
           this.appUpdate({ chains });
