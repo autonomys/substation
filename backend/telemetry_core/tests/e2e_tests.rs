@@ -60,6 +60,7 @@ fn ghash(id: u64) -> BlockHash {
 /// below) is just to give a feel for _how_ we can test basic feed related things.
 #[tokio::test]
 async fn e2e_feed_sent_version_on_connect() {
+    fdlimit::raise_fd_limit().unwrap();
     let server = start_server_debug().await;
 
     // Connect a feed:
@@ -81,6 +82,7 @@ async fn e2e_feed_sent_version_on_connect() {
 /// with the same message content.
 #[tokio::test]
 async fn e2e_feed_ping_responded_to_with_pong() {
+    fdlimit::raise_fd_limit().unwrap();
     let server = start_server_debug().await;
 
     // Connect a feed:
@@ -106,6 +108,7 @@ async fn e2e_feed_ping_responded_to_with_pong() {
 /// a lot of nodes can simultaneously subscribe and are all sent the expected response.
 #[tokio::test]
 async fn e2e_multiple_feeds_sent_version_on_connect() {
+    fdlimit::raise_fd_limit().unwrap();
     let server = start_server_debug().await;
 
     // Connect a bunch of feeds:
@@ -144,6 +147,7 @@ async fn e2e_multiple_feeds_sent_version_on_connect() {
 /// resulting in a deadlock. This test gives confidence that we don't run into such a deadlock.
 #[tokio::test]
 async fn e2e_lots_of_mute_messages_dont_cause_a_deadlock() {
+    fdlimit::raise_fd_limit().unwrap();
     let mut server = start_server_debug().await;
     let shard_id = server.add_shard().await.unwrap();
 
@@ -200,6 +204,7 @@ async fn e2e_lots_of_mute_messages_dont_cause_a_deadlock() {
 /// If the node is removed, the feed should be told that the chain has gone.
 #[tokio::test]
 async fn e2e_feed_add_and_remove_node() {
+    fdlimit::raise_fd_limit().unwrap();
     // Connect server and add shard
     let mut server = start_server_debug().await;
     let shard_id = server.add_shard().await.unwrap();
@@ -236,7 +241,7 @@ async fn e2e_feed_add_and_remove_node() {
 
     // Wait a little for this message to propagate to the core
     // (so that our feed connects after the core knows and not before).
-    tokio::time::sleep(Duration::from_millis(500)).await;
+    tokio::time::sleep(Duration::from_secs(2)).await;
 
     // Connect a feed.
     let (_feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
@@ -265,6 +270,7 @@ async fn e2e_feed_add_and_remove_node() {
 /// to it by name).
 #[tokio::test]
 async fn e2e_feeds_told_about_chain_rename_and_stay_subscribed() {
+    fdlimit::raise_fd_limit().unwrap();
     // Connect a node:
     let mut server = start_server_debug().await;
     let shard_id = server.add_shard().await.unwrap();
@@ -301,7 +307,7 @@ async fn e2e_feeds_told_about_chain_rename_and_stay_subscribed() {
 
     // Wait a little for this message to propagate to the core so that
     // it knows what we're on about when we subscribe, below.
-    tokio::time::sleep(Duration::from_millis(500)).await;
+    tokio::time::sleep(Duration::from_secs(2)).await;
 
     // Connect a feed and subscribe to the above chain:
     let (feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
@@ -364,6 +370,7 @@ async fn e2e_feeds_told_about_chain_rename_and_stay_subscribed() {
 /// "removed chain" message only for the node connected to that shard.
 #[tokio::test]
 async fn e2e_feed_add_and_remove_shard() {
+    fdlimit::raise_fd_limit().unwrap();
     let mut server = start_server_debug().await;
 
     let mut shards = vec![];
@@ -403,11 +410,13 @@ async fn e2e_feed_add_and_remove_shard() {
         shards.push((shard_id, node_tx));
     }
 
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
     // Connect a feed.
     let (_feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
 
     // The feed should be told about both of the chains that we've sent info about:
-    let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
+    let feed_messages = dbg!(feed_rx.recv_feed_messages().await.unwrap());
     assert!(feed_messages.contains(&FeedMessage::AddedChain {
         name: "Local Testnet 1".to_owned(),
         genesis_hash: ghash(1),
@@ -444,6 +453,8 @@ async fn e2e_feed_add_and_remove_shard() {
 async fn e2e_feed_can_subscribe_and_unsubscribe_from_chain() {
     use FeedMessage::*;
 
+    fdlimit::raise_fd_limit().unwrap();
+
     // Start server, add shard, connect node:
     let mut server = start_server_debug().await;
     let shard_id = server.add_shard().await.unwrap();
@@ -477,6 +488,8 @@ async fn e2e_feed_can_subscribe_and_unsubscribe_from_chain() {
             ))
             .unwrap();
     }
+
+    tokio::time::sleep(Duration::from_secs(2)).await;
 
     // Connect a feed
     let (feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
@@ -592,6 +605,8 @@ async fn e2e_node_banned_if_it_sends_too_much_data() {
         node_tx.is_closed()
     }
 
+    fdlimit::raise_fd_limit().unwrap();
+
     assert_eq!(
         try_send_data(1000, 10, 1000).await,
         false,
@@ -608,6 +623,8 @@ async fn e2e_node_banned_if_it_sends_too_much_data() {
 #[tokio::test]
 #[ignore = "Ignored as polkadot is not considered first class chain for telemetry in our fork"]
 async fn e2e_slow_feeds_are_disconnected() {
+    fdlimit::raise_fd_limit().unwrap();
+
     let mut server = start_server(
         ServerOpts::default(),
         // Timeout faster so the test can be quicker:
@@ -708,6 +725,10 @@ async fn e2e_slow_feeds_are_disconnected() {
 /// spamming a load of message IDs and exhausting our memory.
 #[tokio::test]
 async fn e2e_max_nodes_per_connection_is_enforced() {
+    use FeedMessage::{AddedChain, BestBlock, BestFinalized};
+
+    fdlimit::raise_fd_limit().unwrap();
+
     let mut server = start_server(
         ServerOpts::default(),
         CoreOpts::default(),
@@ -751,11 +772,15 @@ async fn e2e_max_nodes_per_connection_is_enforced() {
         })
     };
 
+    // A bit more than 2 seconds
+    let timeout = Duration::from_secs(3);
+    tokio::time::sleep(timeout).await;
+
     // First message ID should lead to feed messages:
     node_tx.send_json_text(json_msg(1)).unwrap();
     assert_ne!(
         feed_rx
-            .recv_feed_messages_timeout(Duration::from_secs(1))
+            .recv_feed_messages_timeout(timeout)
             .await
             .unwrap()
             .len(),
@@ -766,7 +791,7 @@ async fn e2e_max_nodes_per_connection_is_enforced() {
     node_tx.send_json_text(json_msg(2)).unwrap();
     assert_ne!(
         feed_rx
-            .recv_feed_messages_timeout(Duration::from_secs(1))
+            .recv_feed_messages_timeout(timeout)
             .await
             .unwrap()
             .len(),
@@ -776,11 +801,13 @@ async fn e2e_max_nodes_per_connection_is_enforced() {
     // Third message ID should be ignored:
     node_tx.send_json_text(json_msg(3)).unwrap();
     assert_eq!(
-        feed_rx
-            .recv_feed_messages_timeout(Duration::from_secs(1))
-            .await
-            .unwrap()
-            .len(),
+        dbg!(feed_rx.recv_feed_messages_timeout(timeout).await.unwrap())
+            .into_iter()
+            .filter(|update| !matches!(
+                update,
+                BestBlock { .. } | BestFinalized { .. } | AddedChain { node_count: 2, .. }
+            ))
+            .count(),
         0
     );
 
@@ -788,10 +815,15 @@ async fn e2e_max_nodes_per_connection_is_enforced() {
     node_tx.send_json_text(json_msg(4)).unwrap();
     assert_eq!(
         feed_rx
-            .recv_feed_messages_timeout(Duration::from_secs(1))
+            .recv_feed_messages_timeout(timeout)
             .await
             .unwrap()
-            .len(),
+            .into_iter()
+            .filter(|update| !matches!(
+                update,
+                BestBlock { .. } | BestFinalized { .. } | AddedChain { node_count: 2, .. }
+            ))
+            .count(),
         0
     );
 
@@ -813,10 +845,15 @@ async fn e2e_max_nodes_per_connection_is_enforced() {
     )).unwrap();
     assert_ne!(
         feed_rx
-            .recv_feed_messages_timeout(Duration::from_secs(1))
+            .recv_feed_messages_timeout(timeout)
             .await
             .unwrap()
-            .len(),
+            .into_iter()
+            .filter(|update| !matches!(
+                update,
+                BestBlock { .. } | BestFinalized { .. } | AddedChain { node_count: 2, .. }
+            ))
+            .count(),
         0
     );
 
@@ -825,10 +862,15 @@ async fn e2e_max_nodes_per_connection_is_enforced() {
     )).unwrap();
     assert_ne!(
         feed_rx
-            .recv_feed_messages_timeout(Duration::from_secs(1))
+            .recv_feed_messages_timeout(timeout)
             .await
             .unwrap()
-            .len(),
+            .into_iter()
+            .filter(|update| !matches!(
+                update,
+                BestBlock { .. } | BestFinalized { .. } | AddedChain { node_count: 2, .. }
+            ))
+            .count(),
         0
     );
 
@@ -839,10 +881,15 @@ async fn e2e_max_nodes_per_connection_is_enforced() {
     )).unwrap();
     assert_eq!(
         feed_rx
-            .recv_feed_messages_timeout(Duration::from_secs(1))
+            .recv_feed_messages_timeout(timeout)
             .await
             .unwrap()
-            .len(),
+            .into_iter()
+            .filter(|update| !matches!(
+                update,
+                BestBlock { .. } | BestFinalized { .. } | AddedChain { node_count: 2, .. }
+            ))
+            .count(),
         0
     );
 
@@ -851,10 +898,15 @@ async fn e2e_max_nodes_per_connection_is_enforced() {
     )).unwrap();
     assert_eq!(
         feed_rx
-            .recv_feed_messages_timeout(Duration::from_secs(1))
+            .recv_feed_messages_timeout(timeout)
             .await
             .unwrap()
-            .len(),
+            .into_iter()
+            .filter(|update| !matches!(
+                update,
+                BestBlock { .. } | BestFinalized { .. } | AddedChain { node_count: 2, .. }
+            ))
+            .count(),
         0
     );
 

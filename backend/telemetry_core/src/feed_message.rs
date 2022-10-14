@@ -25,7 +25,7 @@ use common::node_types::{
 };
 use serde_json::to_writer;
 
-type FeedNodeId = usize;
+pub type FeedNodeId = usize;
 
 pub trait FeedMessage {
     const ACTION: u8;
@@ -63,9 +63,16 @@ impl FeedMessageWriter for DiscardFeedMessages {
     }
 }
 
+#[derive(Clone)]
 pub struct FeedMessageSerializer {
     /// Current buffer,
     buffer: Vec<u8>,
+}
+
+impl Default for FeedMessageSerializer {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 const BUFCAP: usize = 128;
@@ -221,14 +228,14 @@ impl FeedMessageWrite for AddedNode<'_> {
 #[derive(Serialize)]
 pub struct ChainStatsUpdate<'a>(pub &'a ChainStats);
 
-#[derive(Serialize, PartialEq, Eq, Default)]
+#[derive(Serialize, PartialEq, Eq, Default, Clone)]
 pub struct Ranking<K> {
     pub list: Vec<(K, u64)>,
     pub other: u64,
     pub unknown: u64,
 }
 
-#[derive(Serialize, PartialEq, Eq, Default)]
+#[derive(Serialize, PartialEq, Eq, Default, Clone)]
 pub struct ChainStats {
     pub version: Ranking<String>,
 }

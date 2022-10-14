@@ -78,7 +78,7 @@ impl<'de> Deserialize<'de> for NodeStats {
 }
 
 /// Node IO details.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct NodeIO {
     pub used_state_cache_size: MeanList<f32>,
 }
@@ -112,7 +112,7 @@ impl Block {
 }
 
 /// Node hardware details.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct NodeHardware {
     /// Upload uses means
     pub upload: MeanList<f64>,

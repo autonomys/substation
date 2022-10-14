@@ -41,7 +41,8 @@ impl NodeId {
     }
 }
 
-/// Our state constains node and chain information
+/// Our state contains node and chain information
+#[derive(Clone)]
 pub struct State {
     chains: DenseMap<ChainId, Chain>,
 
@@ -216,7 +217,7 @@ impl State {
     pub fn update_node(
         &mut self,
         NodeId(chain_id, chain_node_id): NodeId,
-        payload: Payload,
+        payload: &Payload,
         feed: &mut impl FeedMessageWriter,
     ) {
         let chain = match self.chains.get_mut(chain_id) {
@@ -227,7 +228,7 @@ impl State {
             }
         };
 
-        chain.update_node(chain_node_id, payload, feed)
+        chain.update_node(chain_node_id, &payload, feed)
     }
 
     /// Update the location for a node. Return `false` if the node was not found.

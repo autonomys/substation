@@ -19,7 +19,7 @@ use std::hash::Hash;
 
 /// Add items to this, and it will keep track of what the item
 /// seen the most is.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MostSeen<T> {
     current_best: T,
     current_count: usize,

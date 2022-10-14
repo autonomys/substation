@@ -37,6 +37,7 @@ pub struct CoreOpts {
     pub feed_timeout: Option<u64>,
     pub worker_threads: Option<usize>,
     pub num_aggregators: Option<usize>,
+    pub update_every: usize,
 }
 
 impl Default for CoreOpts {
@@ -45,6 +46,7 @@ impl Default for CoreOpts {
             feed_timeout: None,
             worker_threads: None,
             num_aggregators: None,
+            update_every: 2,
         }
     }
 }
@@ -161,6 +163,9 @@ pub async fn start_server(
     if let Some(val) = core_opts.num_aggregators {
         core_command = core_command.arg("--num-aggregators").arg(val.to_string());
     }
+    core_command = core_command
+        .arg("--update-every")
+        .arg(core_opts.update_every.to_string());
 
     // Start the server
     Server::start(server::StartOpts::ShardAndCore {

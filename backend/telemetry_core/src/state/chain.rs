@@ -39,6 +39,7 @@ pub type Label = Box<str>;
 const STALE_TIMEOUT: u64 = 2 * 60 * 1000; // 2 minutes
 const STATS_UPDATE_INTERVAL: Duration = Duration::from_secs(5);
 
+#[derive(Clone)]
 pub struct Chain {
     /// Labels that nodes use for this chain. We keep track of
     /// the most commonly used label as nodes are added/removed.
@@ -160,7 +161,7 @@ impl Chain {
     pub fn update_node(
         &mut self,
         nid: ChainNodeId,
-        payload: Payload,
+        payload: &Payload,
         feed: &mut impl FeedMessageWriter,
     ) {
         if let Some(block) = payload.best_block() {

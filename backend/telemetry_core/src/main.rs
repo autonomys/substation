@@ -84,7 +84,10 @@ struct Opts {
     max_third_party_nodes: usize,
     /// Send updates periodically (in seconds).
     #[structopt(long, parse(try_from_str = parse_duration))]
-    update_every: Option<Duration>,
+    update_every: Duration,
+    /// Skip sending node data.
+    #[structopt(long)]
+    skip_node_data: bool,
 }
 
 fn parse_duration(arg: &str) -> Result<Duration, std::num::ParseIntError> {
@@ -140,6 +143,7 @@ async fn start_server(
         aggregator_queue_len,
         max_third_party_nodes,
         update_every,
+        skip_node_data,
         ..
     }: Opts,
 ) -> anyhow::Result<()> {
@@ -150,6 +154,7 @@ async fn start_server(
             denylist,
             max_third_party_nodes,
             update_every,
+            send_node_data: !skip_node_data,
         },
     )
     .await?;

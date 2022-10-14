@@ -20,6 +20,7 @@ use std::iter::Sum;
 
 /// Keep track of last N numbers pushed onto internal stack.
 /// Provides means to get an average of said numbers.
+#[derive(Clone)]
 pub struct NumStats<T> {
     stack: Box<[T]>,
     index: usize,

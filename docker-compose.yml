@@ -26,8 +26,8 @@ services:
       - /app/tmp:uid=101,gid=101
     environment:
       SUBSTRATE_TELEMETRY_URL: wss://telemetry.subspace.network/feed
-      SUBSPACE_API_URL: http://telemetry.subspace.network/api
-      DISABLE_NODE_LIST: 1
+      SUBSPACE_API_URL: https://telemetry.subspace.network/api
+      DISABLE_NODE_LIST: 0
     ports:
       - 127.0.0.1:3000:8000
     expose:

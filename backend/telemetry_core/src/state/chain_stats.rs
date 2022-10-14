@@ -17,7 +17,7 @@
 use super::counter::{Counter, CounterValue};
 use crate::feed_message::ChainStats;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct ChainStatsCollator {
     version: Counter<String>,
 }

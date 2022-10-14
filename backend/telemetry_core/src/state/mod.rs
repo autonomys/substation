@@ -19,7 +19,9 @@ mod chain_stats;
 mod counter;
 mod node;
 
+mod batched;
 mod state;
 
+pub use batched::State as BatchedState;
 pub use node::Node;
 pub use state::*;

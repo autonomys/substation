@@ -14,12 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::net::{IpAddr, Ipv4Addr};
+use std::net::IpAddr;
 use std::sync::Arc;
 
-use futures::{Sink, SinkExt};
 use maxminddb::{geoip2::City, Reader as GeoIpReader};
-use parking_lot::RwLock;
 use rustc_hash::FxHashMap;
 
 use common::node_types::NodeLocation;
@@ -27,55 +25,12 @@ use common::node_types::NodeLocation;
 /// The returned location is optional; it may be None if not found.
 pub type Location = Option<Arc<NodeLocation>>;
 
-/// This is responsible for taking an IP address and attempting
-/// to find a geographical location from this
-pub fn find_location<Id, R>(response_chan: R) -> flume::Sender<(Id, IpAddr)>
-where
-    R: Sink<(Id, Option<Arc<NodeLocation>>)> + Unpin + Send + Clone + 'static,
-    Id: Clone + Send + 'static,
-{
-    let (tx, rx) = flume::unbounded();
-
-    // cache entries
-    let mut cache: FxHashMap<IpAddr, Arc<NodeLocation>> = FxHashMap::default();
-
-    // Default entry for localhost
-    cache.insert(
-        Ipv4Addr::new(127, 0, 0, 1).into(),
-        Arc::new(NodeLocation {
-            latitude: 52.516_6667,
-            longitude: 13.4,
-            city: "Berlin".into(),
-        }),
-    );
-
-    // Create a locator with our cache. This is used to obtain locations.
-    let locator = Arc::new(Locator::new(cache));
-
-    // Spawn a loop to handle location requests
-    tokio::spawn(async move {
-        loop {
-            while let Ok((id, ip_address)) = rx.recv_async().await {
-                let mut response_chan = response_chan.clone();
-                let locator = Arc::clone(&locator);
-
-                tokio::spawn(async move {
-                    let location = locator.locate(ip_address);
-                    let _ = response_chan.send((id, location)).await;
-                });
-            }
-        }
-    });
-
-    tx
-}
-
 /// This struct can be used to make location requests, given
 /// an IPV4 address.
-#[derive(Debug, Clone)]
-struct Locator {
-    city: Arc<maxminddb::Reader<&'static [u8]>>,
-    cache: Arc<RwLock<FxHashMap<IpAddr, Arc<NodeLocation>>>>,
+#[derive(Debug)]
+pub struct Locator {
+    city: maxminddb::Reader<&'static [u8]>,
+    cache: FxHashMap<IpAddr, Arc<NodeLocation>>,
 }
 
 impl Locator {
@@ -84,19 +39,14 @@ impl Locator {
 
     pub fn new(cache: FxHashMap<IpAddr, Arc<NodeLocation>>) -> Self {
         Self {
-            city: GeoIpReader::from_source(Self::CITY_DATA)
-                .map(Arc::new)
-                .expect("City data is always valid"),
-            cache: Arc::new(RwLock::new(cache)),
+            city: GeoIpReader::from_source(Self::CITY_DATA).expect("City data is always valid"),
+            cache,
         }
     }
 
-    pub fn locate(&self, ip: IpAddr) -> Option<Arc<NodeLocation>> {
+    pub fn locate(&mut self, ip: IpAddr) -> Location {
         // Return location quickly if it's cached:
-        let cached_loc = {
-            let cache_reader = self.cache.read();
-            cache_reader.get(&ip).cloned()
-        };
+        let cached_loc = self.cache.get(&ip).cloned();
         if cached_loc.is_some() {
             return cached_loc;
         }
@@ -117,7 +67,7 @@ impl Locator {
             latitude,
             longitude,
         });
-        self.cache.write().insert(ip, Arc::clone(&location));
+        self.cache.insert(ip, Arc::clone(&location));
 
         Some(location)
     }

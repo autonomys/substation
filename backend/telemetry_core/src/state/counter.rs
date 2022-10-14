@@ -18,7 +18,7 @@ use crate::feed_message::Ranking;
 use std::collections::HashMap;
 
 /// A data structure which counts how many occurences of a given key we've seen.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Counter<K> {
     /// A map containing the number of occurences of a given key.
     ///
