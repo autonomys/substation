@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+use std::io::Read;
+
 use anyhow::Context;
 use common::node_types::{
     BlockDetails, BlockHash, BlockNumber, NodeLocation, NodeStats, Timestamp,
@@ -139,7 +141,10 @@ pub struct NodeDetails {
 impl FeedMessage {
     /// Decode a slice of bytes into a vector of feed messages
     pub fn from_bytes(bytes: &[u8]) -> Result<Vec<FeedMessage>, anyhow::Error> {
-        let v: Vec<&RawValue> = serde_json::from_slice(bytes)?;
+        let mut vec = Vec::new();
+        let mut dec = snap::read::FrameDecoder::new(bytes);
+        dec.read_to_end(&mut vec)?;
+        let v: Vec<&RawValue> = serde_json::from_slice(&vec)?;
 
         let mut feed_messages = vec![];
         for raw_keyval in v.chunks(2) {
@@ -357,14 +362,19 @@ impl FeedMessage {
 mod test {
 
     use super::*;
+    use std::io::Write;
 
     #[test]
     fn decode_remove_node_msg() {
         // "remove chain ''":
         let msg = r#"[12,"0x0000000000000000000000000000000000000000000000000000000000000000"]"#;
+        let mut encoder = snap::write::FrameEncoder::new(Vec::new());
+        encoder
+            .write_all(msg.as_ref())
+            .expect("Writing to vector never fails");
 
         assert_eq!(
-            FeedMessage::from_bytes(msg.as_bytes()).unwrap(),
+            FeedMessage::from_bytes(encoder.into_inner().unwrap().as_ref()).unwrap(),
             vec![FeedMessage::RemovedChain {
                 genesis_hash: BlockHash::zero(),
             }]
@@ -375,9 +385,13 @@ mod test {
     fn decode_remove_then_add_node_msg() {
         // "remove chain '', then add chain 'Local Testnet' with 1 node":
         let msg = r#"[12,"0x0000000000000000000000000000000000000000000000000000000000000000",11,["Local Testnet","0x0000000000000000000000000000000000000000000000000000000000000000",1,1]]"#;
+        let mut encoder = snap::write::FrameEncoder::new(Vec::new());
+        encoder
+            .write_all(msg.as_ref())
+            .expect("Writing to vector never fails");
 
         assert_eq!(
-            FeedMessage::from_bytes(msg.as_bytes()).unwrap(),
+            FeedMessage::from_bytes(encoder.into_inner().unwrap().as_ref()).unwrap(),
             vec![
                 FeedMessage::RemovedChain {
                     genesis_hash: BlockHash::zero(),

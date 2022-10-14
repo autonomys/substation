@@ -1540,6 +1540,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fe0f37c9e8f3c5a4a66ad655a93c74daac4ad00c441533bf5c6e7990bb42604e"
 
 [[package]]
+name = "snap"
+version = "1.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "45456094d1983e2ee2a18fdfebce3189fa451699d0502cb8e3b49dba5ba41451"
+
+[[package]]
 name = "socket2"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1658,6 +1664,7 @@ dependencies = [
  "shellwords",
  "simple_logger",
  "smallvec",
+ "snap",
  "soketto",
  "structopt",
  "test_utils",
@@ -1717,6 +1724,7 @@ dependencies = [
  "http",
  "log",
  "serde_json",
+ "snap",
  "soketto",
  "thiserror",
  "time 0.3.0",
