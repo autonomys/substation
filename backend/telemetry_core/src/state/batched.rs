@@ -86,18 +86,14 @@ struct ChainUpdates {
 /// Wrapper which batches updates to state.
 #[derive(Clone)]
 pub struct State {
-    // Previous state (which is read only)
-    prev: OrdinaryState,
-    // Next state (which is write only)
-    next: OrdinaryState,
+    // Node state
+    state: OrdinaryState,
     /// Accumulated updates for each chain
     chains: HashMap<BlockHash, ChainUpdates>,
     /// We maintain a mapping between NodeId and ConnId+LocalId, so that we know
     /// which messages are about which nodes.
     node_ids: BiMap<NodeId, (ConnId, ShardNodeId)>,
     /// Encoded node messages. (Usually send during node initialization)
-    ///
-    /// Basically `prev` state encoded.
     chain_nodes: HashMap<BlockHash, Vec<ToFeedWebsocket>>,
     /// Removed chains tracker
     removed_chains: HashSet<BlockHash>,
@@ -139,8 +135,7 @@ impl State {
             })
             .collect();
         Ok(Self {
-            prev: OrdinaryState::new([], max_third_party_nodes),
-            next: OrdinaryState::new(denylist, max_third_party_nodes),
+            state: OrdinaryState::new(denylist, max_third_party_nodes),
             chains,
             node_ids: BiMap::new(),
             chain_nodes: HashMap::new(),
@@ -152,10 +147,10 @@ impl State {
     }
 
     pub fn iter_chains(&self) -> impl Iterator<Item = StateChain<'_>> {
-        self.prev.iter_chains()
+        self.state.iter_chains()
     }
     pub fn get_chain_by_genesis_hash(&self, genesis_hash: &BlockHash) -> Option<StateChain<'_>> {
-        self.prev.get_chain_by_genesis_hash(genesis_hash)
+        self.state.get_chain_by_genesis_hash(genesis_hash)
     }
 
     /// Drain updates for all feeds and return serializer.
@@ -193,7 +188,7 @@ impl State {
                 *highest_node_count,
             ));
         }
-        for genesis_hash in std::mem::take(&mut self.removed_chains) {
+        for genesis_hash in self.removed_chains.drain() {
             feed.push(feed_message::RemovedChain(genesis_hash))
         }
         feed
@@ -205,17 +200,13 @@ impl State {
     pub fn drain_chain_updates(
         &'_ mut self,
     ) -> impl Iterator<Item = (BlockHash, Vec<FeedMessageSerializer>)> + '_ {
-        self.prev.clone_from(&self.next);
         self.chains
             .iter_mut()
             .filter(|(_, updates)| updates.node_count != 0)
             .map(|(genesis_hash, updates)| {
                 let mut vec = vec![];
 
-                for removed_nodes in &std::mem::take(&mut updates.removed_nodes)
-                    .into_iter()
-                    .chunks(Self::MSGS_PER_WS_MSG)
-                {
+                for removed_nodes in &updates.removed_nodes.drain().chunks(Self::MSGS_PER_WS_MSG) {
                     let mut feed = FeedMessageSerializer::new();
                     for removed_node in removed_nodes {
                         feed.push(feed_message::RemovedNode(
@@ -225,10 +216,7 @@ impl State {
                     vec.push(feed);
                 }
 
-                for added_nodes in &std::mem::take(&mut updates.added_nodes)
-                    .into_iter()
-                    .chunks(Self::MSGS_PER_WS_MSG)
-                {
+                for added_nodes in &updates.added_nodes.drain().chunks(Self::MSGS_PER_WS_MSG) {
                     let mut feed = FeedMessageSerializer::new();
                     for (added_node_id, node) in added_nodes {
                         feed.push(feed_message::AddedNode(
@@ -239,10 +227,7 @@ impl State {
                     vec.push(feed);
                 }
 
-                for updated_nodes in &std::mem::take(&mut updates.updated_nodes)
-                    .into_iter()
-                    .chunks(Self::MSGS_PER_WS_MSG)
-                {
+                for updated_nodes in &updates.updated_nodes.drain().chunks(Self::MSGS_PER_WS_MSG) {
                     let mut feed = FeedMessageSerializer::new();
                     for (node_id, updates) in updated_nodes {
                         use node_message::Payload::*;
@@ -258,32 +243,35 @@ impl State {
 
                         // TODO: decouple updating and serializing in a nice way.
                         if let Some(connected) = updates.system_connected {
-                            self.next.update_node(
+                            self.state.update_node(
                                 node_id.clone(),
                                 &SystemConnected(connected),
                                 &mut feed,
                             );
                         }
                         if let Some(interval) = updates.system_interval {
-                            self.next.update_node(
+                            self.state.update_node(
                                 node_id.clone(),
                                 &SystemInterval(interval),
                                 &mut feed,
                             );
                         }
                         if let Some(import) = updates.block_import {
-                            self.next
-                                .update_node(node_id.clone(), &BlockImport(import), &mut feed);
+                            self.state.update_node(
+                                node_id.clone(),
+                                &BlockImport(import),
+                                &mut feed,
+                            );
                         }
                         if let Some(finalized) = updates.notify_finalized {
-                            self.next.update_node(
+                            self.state.update_node(
                                 node_id.clone(),
                                 &NotifyFinalized(finalized),
                                 &mut feed,
                             );
                         }
                         if let Some(authority) = updates.afg_authority_set {
-                            self.next
+                            self.state
                                 .update_node(node_id, &AfgAuthoritySet(authority), &mut feed);
                         }
                     }
@@ -308,7 +296,7 @@ impl State {
             chain_node_count,
             has_chain_label_changed,
             ..
-        } = match self.next.add_node(genesis_hash, node) {
+        } = match self.state.add_node(genesis_hash, node) {
             AddNodeResult::NodeAddedToChain(details) => details,
             AddNodeResult::ChainOverQuota => return Err(MuteReason::Overquota),
             AddNodeResult::ChainOnDenyList => return Err(MuteReason::ChainNotAllowed),
@@ -355,7 +343,7 @@ impl State {
             return;
         }
 
-        let updates = if let Some(chain) = self.next.get_chain_by_node_id(node_id) {
+        let updates = if let Some(chain) = self.state.get_chain_by_node_id(node_id) {
             self.chains
                 .entry(chain.genesis_hash())
                 .or_default()
@@ -407,7 +395,7 @@ impl State {
         // Group by chain to simplify the handling of feed messages:
         let mut node_ids_per_chain = HashMap::<BlockHash, Vec<NodeId>>::new();
         for node_id in node_ids.into_iter() {
-            if let Some(chain) = self.next.get_chain_by_node_id(node_id) {
+            if let Some(chain) = self.state.get_chain_by_node_id(node_id) {
                 node_ids_per_chain
                     .entry(chain.genesis_hash())
                     .or_default()
@@ -435,7 +423,7 @@ impl State {
                     chain_node_count,
                     new_chain_label,
                     ..
-                } = match self.next.remove_node(node_id) {
+                } = match self.state.remove_node(node_id) {
                     Some(details) => details,
                     None => {
                         log::error!("Could not find node {node_id:?}");
@@ -455,11 +443,11 @@ impl State {
     }
 
     pub fn update_node_location(&mut self, node_id: NodeId, location: Location) {
-        self.next.update_node_location(node_id, location.clone());
+        self.state.update_node_location(node_id, location.clone());
 
         if self.send_node_data {
             if let Some(loc) = location {
-                if let Some(chain) = self.next.get_chain_by_node_id(node_id) {
+                if let Some(chain) = self.state.get_chain_by_node_id(node_id) {
                     let updates = self
                         .chains
                         .entry(chain.genesis_hash())
@@ -488,7 +476,7 @@ impl State {
         // size is the max number of node info we fit into 1 message; smaller messages allow the UI
         // to react a little faster and not have to wait for a larger update to come in. A chunk size
         // of 64 means each message is ~32k.
-        for chain in self.prev.iter_chains() {
+        for chain in self.state.iter_chains() {
             let all_feed_messages: Vec<_> = chain
                 .nodes_slice()
                 .par_iter()
