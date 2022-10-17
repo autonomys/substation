@@ -499,8 +499,6 @@ export class Connection {
 
       const str = Connection.utf8decoder.decode(uncompressed);
 
-      console.log({ str });
-
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data = str as any as FeedMessage.Data;
     }
