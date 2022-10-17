@@ -19,6 +19,9 @@ import { PersistentSet } from './persist';
 import { getHashData, setHashData } from './utils';
 import { ACTIONS } from './common/feed';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const SnappyJS = require('snappyjs');
+
 const CONNECTION_TIMEOUT_BASE = (1000 * 5) as Types.Milliseconds; // 5 seconds
 const CONNECTION_TIMEOUT_MAX = (1000 * 60 * 5) as Types.Milliseconds; // 5 minutes
 const MESSAGE_TIMEOUT = (1000 * 60) as Types.Milliseconds; // 60 seconds
@@ -488,13 +491,15 @@ export class Connection {
       data = event.data as any as FeedMessage.Data;
     } else {
       const u8aData = new Uint8Array(event.data);
-
+      const uncompressed = SnappyJS.uncompress(u8aData);
       // Future-proofing for when we switch to binary feed
-      if (u8aData[0] === 0x00) {
+      if (uncompressed[0] === 0x00) {
         return this.newVersion();
       }
 
-      const str = Connection.utf8decoder.decode(event.data);
+      const str = Connection.utf8decoder.decode(uncompressed);
+
+      console.log({ str });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data = str as any as FeedMessage.Data;
