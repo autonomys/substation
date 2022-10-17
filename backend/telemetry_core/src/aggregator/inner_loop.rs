@@ -28,7 +28,6 @@ use common::{
 use futures::{Stream, StreamExt};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::io::Write;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::{
@@ -156,16 +155,14 @@ pub enum ToFeedWebsocket {
 
 impl ToFeedWebsocket {
     pub fn new(bytes: impl AsRef<[u8]>) -> Self {
-        let mut encoder = snap::write::FrameEncoder::new(Vec::new());
-        encoder
-            .write_all(bytes.as_ref())
-            .expect("Writing to vector never fails");
-        Self::Bytes(
-            encoder
-                .into_inner()
-                .expect("Writing to vector never fails")
-                .into(),
-        )
+        snap::raw::Encoder::new()
+            .compress_vec(bytes.as_ref())
+            .map(Into::into)
+            .map(Self::Bytes)
+            .expect(concat!(
+                "TODO: API here is broken, this method never returns error,",
+                " as buffer is always allocated by library"
+            ))
     }
 }
 
