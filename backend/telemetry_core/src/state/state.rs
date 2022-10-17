@@ -263,9 +263,6 @@ impl<'a> StateChain<'a> {
     pub fn node_count(&self) -> usize {
         self.chain.node_count()
     }
-    pub fn highest_node_count(&self) -> usize {
-        self.chain.highest_node_count()
-    }
     pub fn best_block(&self) -> &'a Block {
         self.chain.best_block()
     }

@@ -360,11 +360,16 @@ impl InnerLoop {
                 let mut feed_serializer = FeedMessageSerializer::new();
                 feed_serializer.push(feed_message::Version(32));
                 for chain in self.node_state.iter_chains() {
+                    let genesis = chain.genesis_hash();
+                    let highest_node_count = self
+                        .node_state
+                        .get_chain_max_node_count(&chain.genesis_hash())
+                        .expect("Max node count is always present");
                     feed_serializer.push(feed_message::AddedChain(
                         chain.label(),
-                        chain.genesis_hash(),
+                        genesis,
                         chain.node_count(),
-                        chain.highest_node_count(),
+                        highest_node_count,
                     ));
                 }
 

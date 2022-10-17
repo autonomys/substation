@@ -60,8 +60,6 @@ pub struct Chain {
     genesis_hash: BlockHash,
     /// Maximum number of nodes allowed to connect from this chain
     max_nodes: usize,
-    /// Highest node count on the chain
-    highest_node_count: usize,
     /// Collator for the stats.
     stats_collator: ChainStatsCollator,
     /// Stats for this chain.
@@ -97,7 +95,6 @@ impl Chain {
     pub fn new(genesis_hash: BlockHash, max_nodes: usize) -> Self {
         Chain {
             labels: MostSeen::default(),
-            highest_node_count: 0,
             nodes: DenseMap::new(),
             best: Block::zero(),
             finalized: Block::zero(),
@@ -130,7 +127,6 @@ impl Chain {
         let node_chain_label = &details.chain;
         let label_result = self.labels.insert(node_chain_label);
         let node_id = self.nodes.add(node);
-        self.highest_node_count = self.highest_node_count.max(self.node_count());
 
         AddNodeResult::Added {
             id: node_id,
@@ -353,9 +349,6 @@ impl Chain {
     }
     pub fn node_count(&self) -> usize {
         self.nodes.len()
-    }
-    pub fn highest_node_count(&self) -> usize {
-        self.highest_node_count
     }
     pub fn best_block(&self) -> &Block {
         &self.best
