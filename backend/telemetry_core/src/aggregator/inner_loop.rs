@@ -150,19 +150,22 @@ impl FromStr for FromFeedWebsocket {
 /// The aggregator can these messages back to a feed connection.
 #[derive(Clone, Debug)]
 pub enum ToFeedWebsocket {
-    Bytes(bytes::Bytes),
+    Msg {
+        encoded: bytes::Bytes,
+        decoded: bytes::Bytes,
+    },
 }
 
 impl ToFeedWebsocket {
-    pub fn new(bytes: impl AsRef<[u8]>) -> Self {
-        snap::raw::Encoder::new()
-            .compress_vec(bytes.as_ref())
-            .map(Into::into)
-            .map(Self::Bytes)
+    pub fn new(decoded: bytes::Bytes) -> Self {
+        let encoded = snap::raw::Encoder::new()
+            .compress_vec(&decoded)
             .expect(concat!(
                 "TODO: API here is broken, this method never returns error,",
                 " as buffer is always allocated by library"
             ))
+            .into();
+        Self::Msg { encoded, decoded }
     }
 }
 
