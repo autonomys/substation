@@ -153,6 +153,13 @@ impl State {
         self.state.get_chain_by_genesis_hash(genesis_hash)
     }
 
+    pub fn get_chain_max_node_count(&self, genesis_hash: &BlockHash) -> Option<usize> {
+        self.metadata
+            .chains
+            .get(genesis_hash)
+            .map(|meta| meta.highest_node_count)
+    }
+
     /// Drain updates for all feeds and return serializer.
     pub fn drain_updates_for_all_feeds(&mut self) -> FeedMessageSerializer {
         if self.metadata.update(&self.chains) {

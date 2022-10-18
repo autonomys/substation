@@ -183,7 +183,7 @@ async fn e2e_lots_of_mute_messages_dont_cause_a_deadlock() {
 
     // Wait a little time (just to let everything get deadlocked) before
     // trying to have the aggregator send out feed messages.
-    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
 
     // Start a feed. If deadlock has happened, it won't receive
     // any messages.
