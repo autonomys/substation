@@ -63,10 +63,10 @@ export class Connection {
     }
 
     if (window.location.protocol === 'https:') {
-      return `wss://${window.location.hostname}/feed/`;
+      return `wss://${window.location.hostname}/feed/?compress=true`;
     }
 
-    return 'ws://127.0.0.1:8000/feed';
+    return 'ws://127.0.0.1:8000/feed?compress=true';
   }
 
   private static async socket(): Promise<WebSocket> {

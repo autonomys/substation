@@ -25,7 +25,7 @@ services:
       - /var/run:uid=101,gid=101
       - /app/tmp:uid=101,gid=101
     environment:
-      SUBSTRATE_TELEMETRY_URL: wss://telemetry.subspace.network/feed
+      SUBSTRATE_TELEMETRY_URL: 'wss://telemetry.subspace.network/feed?compress=true'
       SUBSPACE_API_URL: https://telemetry.subspace.network/api
       DISABLE_NODE_LIST: 0
     ports:
