@@ -139,7 +139,7 @@ pub struct NodeDetails {
 impl FeedMessage {
     /// Decode a slice of bytes into a vector of feed messages
     pub fn from_bytes(bytes: &[u8]) -> Result<Vec<FeedMessage>, anyhow::Error> {
-        let v: Vec<&RawValue> = serde_json::from_slice(bytes)?;
+        let v: Vec<&RawValue> = serde_json::from_slice(&bytes)?;
 
         let mut feed_messages = vec![];
         for raw_keyval in v.chunks(2) {
@@ -364,7 +364,7 @@ mod test {
         let msg = r#"[12,"0x0000000000000000000000000000000000000000000000000000000000000000"]"#;
 
         assert_eq!(
-            FeedMessage::from_bytes(msg.as_bytes()).unwrap(),
+            FeedMessage::from_bytes(msg.as_ref()).unwrap(),
             vec![FeedMessage::RemovedChain {
                 genesis_hash: BlockHash::zero(),
             }]
@@ -375,9 +375,8 @@ mod test {
     fn decode_remove_then_add_node_msg() {
         // "remove chain '', then add chain 'Local Testnet' with 1 node":
         let msg = r#"[12,"0x0000000000000000000000000000000000000000000000000000000000000000",11,["Local Testnet","0x0000000000000000000000000000000000000000000000000000000000000000",1,1]]"#;
-
         assert_eq!(
-            FeedMessage::from_bytes(msg.as_bytes()).unwrap(),
+            FeedMessage::from_bytes(msg.as_ref()).unwrap(),
             vec![
                 FeedMessage::RemovedChain {
                     genesis_hash: BlockHash::zero(),

@@ -175,6 +175,12 @@ async fn start_server(
                 // Subscribe to feed messages:
                 (&Method::GET, "/feed") => {
                     log::info!("Opening /feed connection from {:?}", addr);
+                    let encode = req
+                        .uri()
+                        .query()
+                        .map(qstring::QString::from)
+                        .map(|query| matches!(query.get("compress"), Some("1" | "true" | "True")))
+                        .unwrap_or_default();
                     Ok(http_utils::upgrade_to_websocket(
                         req,
                         move |ws_send, ws_recv| async move {
@@ -186,6 +192,7 @@ async fn start_server(
                                     tx_to_aggregator,
                                     feed_timeout,
                                     feed_id,
+                                    encode,
                                 )
                                 .await;
                             log::info!("Closing /feed connection from {:?}", addr);
@@ -379,6 +386,7 @@ async fn handle_feed_websocket_connection<S>(
     mut tx_to_aggregator: S,
     feed_timeout: u64,
     _feed_id: u64, // <- can be useful for debugging purposes.
+    encode: bool,
 ) -> (S, http_utils::WsSender)
 where
     S: futures::Sink<FromFeedWebsocket, Error = anyhow::Error> + Unpin + Send + 'static,
@@ -477,7 +485,8 @@ where
             // There is only one message type at the mo; bytes to send
             // to the websocket. collect them all up to dispatch in one shot.
             let all_msg_bytes = msgs.into_iter().map(|msg| match msg {
-                ToFeedWebsocket::Bytes(bytes) => bytes,
+                ToFeedWebsocket::Msg { encoded, .. } if encode => encoded,
+                ToFeedWebsocket::Msg { decoded, .. } => decoded,
             });
 
             // If the feed is too slow to receive the current batch of messages, we'll drop it.
