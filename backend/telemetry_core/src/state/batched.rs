@@ -507,7 +507,7 @@ impl State {
                     }
                     feed_serializer.into_finalized()
                 })
-                .map(ToFeedWebsocket::Bytes)
+                .map(ToFeedWebsocket::new)
                 .collect();
 
             self.chain_nodes

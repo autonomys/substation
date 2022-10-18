@@ -150,7 +150,23 @@ impl FromStr for FromFeedWebsocket {
 /// The aggregator can these messages back to a feed connection.
 #[derive(Clone, Debug)]
 pub enum ToFeedWebsocket {
-    Bytes(bytes::Bytes),
+    Msg {
+        encoded: bytes::Bytes,
+        decoded: bytes::Bytes,
+    },
+}
+
+impl ToFeedWebsocket {
+    pub fn new(decoded: bytes::Bytes) -> Self {
+        let encoded = snap::raw::Encoder::new()
+            .compress_vec(&decoded)
+            .expect(concat!(
+                "TODO: API here is broken, this method never returns error,",
+                " as buffer is always allocated by library"
+            ))
+            .into();
+        Self::Msg { encoded, decoded }
+    }
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Copy)]
@@ -375,7 +391,7 @@ impl InnerLoop {
 
                 // Send this to the channel that subscribed:
                 if let Some(bytes) = feed_serializer.into_finalized() {
-                    let _ = channel.send(ToFeedWebsocket::Bytes(bytes));
+                    let _ = channel.send(ToFeedWebsocket::new(bytes));
                 }
             }
             FromFeedWebsocket::Ping { value } => {
@@ -388,7 +404,7 @@ impl InnerLoop {
                 let mut feed_serializer = FeedMessageSerializer::new();
                 feed_serializer.push(feed_message::Pong(&value));
                 if let Some(bytes) = feed_serializer.into_finalized() {
-                    let _ = feed_channel.send(ToFeedWebsocket::Bytes(bytes));
+                    let _ = feed_channel.send(ToFeedWebsocket::new(bytes));
                 }
             }
             FromFeedWebsocket::Subscribe { chain } => {
@@ -429,7 +445,7 @@ impl InnerLoop {
                 ));
                 feed_serializer.push(feed_message::ChainStatsUpdate(new_chain.stats()));
                 if let Some(bytes) = feed_serializer.into_finalized() {
-                    let _ = feed_channel.send(ToFeedWebsocket::Bytes(bytes));
+                    let _ = feed_channel.send(ToFeedWebsocket::new(bytes));
                 }
 
                 let new_genesis_hash = new_chain.genesis_hash();
@@ -459,7 +475,7 @@ impl InnerLoop {
         serializer: FeedMessageSerializer,
     ) {
         if let Some(bytes) = serializer.into_finalized() {
-            self.broadcast_to_chain_feeds(genesis_hash, ToFeedWebsocket::Bytes(bytes));
+            self.broadcast_to_chain_feeds(genesis_hash, ToFeedWebsocket::new(bytes));
         }
     }
 
@@ -477,7 +493,7 @@ impl InnerLoop {
     /// Finalize a [`FeedMessageSerializer`] and broadcast the result to all feeds
     fn finalize_and_broadcast_to_all_feeds(&mut self, serializer: FeedMessageSerializer) {
         if let Some(bytes) = serializer.into_finalized() {
-            self.broadcast_to_all_feeds(ToFeedWebsocket::Bytes(bytes));
+            self.broadcast_to_all_feeds(ToFeedWebsocket::new(bytes));
         }
     }
 
