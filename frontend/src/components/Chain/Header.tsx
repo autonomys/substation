@@ -31,7 +31,8 @@ import nodesIcon from '../../icons/blockchain-icon.svg';
 import statsIcon from '../../icons/graph.svg';
 import databaseIcon from '../../icons/database.svg';
 import fingerprintIcon from '../../icons/fingerprint.svg';
-import rocketIcon from '../../icons/rocket.svg';
+// TODO: enable Highest Node Count later
+// import rocketIcon from '../../icons/rocket.svg';
 
 import './Header.css';
 
@@ -83,7 +84,8 @@ export class Header extends React.Component<HeaderProps> {
       best,
       finalized,
       nodeCount,
-      highestNodeCount,
+      // TODO: enable Highest Node Count later
+      // highestNodeCount,
       blockTimestamp,
       blockAverage,
       spacePledged,
@@ -110,9 +112,10 @@ export class Header extends React.Component<HeaderProps> {
         <Tile icon={nodesIcon} title="Current Node Count">
           {formatNumber(nodeCount)}
         </Tile>
-        <Tile icon={rocketIcon} title="Highest Node Count">
+        {/* TODO: enable Highest Node Count later */}
+        {/* <Tile icon={rocketIcon} title="Highest Node Count">
           {formatNumber(highestNodeCount)}
-        </Tile>
+        </Tile> */}
         {uniqueAddressCount ? (
           <Tile icon={fingerprintIcon} title="Unique addresses">
             {formatNumber(uniqueAddressCount)}
