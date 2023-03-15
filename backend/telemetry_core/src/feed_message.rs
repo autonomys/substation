@@ -207,6 +207,7 @@ impl FeedMessageWrite for AddedNode<'_> {
         let details = node.details();
         let details = (
             &details.name,
+            &details.implementation,
             &details.version,
             &details.validator,
             &details.network_id,
@@ -238,4 +239,16 @@ pub struct Ranking<K> {
 #[derive(Serialize, PartialEq, Eq, Default, Clone)]
 pub struct ChainStats {
     pub version: Ranking<String>,
+    pub target_os: Ranking<String>,
+    pub target_arch: Ranking<String>,
+    pub cpu: Ranking<String>,
+    pub memory: Ranking<(u32, Option<u32>)>,
+    pub core_count: Ranking<u32>,
+    pub linux_kernel: Ranking<String>,
+    pub linux_distro: Ranking<String>,
+    pub is_virtual_machine: Ranking<bool>,
+    pub cpu_hashrate_score: Ranking<(u32, Option<u32>)>,
+    pub memory_memcpy_score: Ranking<(u32, Option<u32>)>,
+    pub disk_sequential_write_score: Ranking<(u32, Option<u32>)>,
+    pub disk_random_write_score: Ranking<(u32, Option<u32>)>,
 }
