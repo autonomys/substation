@@ -125,7 +125,7 @@ impl Chain {
 
         let details = node.details();
         self.stats_collator
-            .add_or_remove_node(details, CounterValue::Increment);
+            .add_or_remove_node(details, None, CounterValue::Increment);
 
         let node_chain_label = &details.chain;
         let label_result = self.labels.insert(node_chain_label);
@@ -151,7 +151,7 @@ impl Chain {
 
         let details = node.details();
         self.stats_collator
-            .add_or_remove_node(details, CounterValue::Decrement);
+            .add_or_remove_node(details, node.hwbench(), CounterValue::Decrement);
 
         let node_chain_label = &node.details().chain;
         let label_result = self.labels.remove(node_chain_label);
@@ -193,6 +193,19 @@ impl Chain {
                         feed.push(feed_message::AddedNode(nid.into(), &node));
                     }
                     return;
+                }
+                Payload::HwBench(ref hwbench) => {
+                    let new_hwbench = common::node_types::NodeHwBench {
+                        cpu_hashrate_score: hwbench.cpu_hashrate_score,
+                        memory_memcpy_score: hwbench.memory_memcpy_score,
+                        disk_sequential_write_score: hwbench.disk_sequential_write_score,
+                        disk_random_write_score: hwbench.disk_random_write_score,
+                    };
+                    let old_hwbench = node.update_hwbench(new_hwbench);
+                    self.stats_collator
+                        .update_hwbench(old_hwbench.as_ref(), CounterValue::Decrement);
+                    self.stats_collator
+                        .update_hwbench(node.hwbench(), CounterValue::Increment);
                 }
                 _ => {}
             }
