@@ -10,7 +10,9 @@ use crate::{
 use bimap::BiMap;
 use common::{
     internal_messages::{MuteReason, ShardNodeId},
-    node_message::{self, AfgAuthoritySet, Finalized, SystemConnected, SystemInterval},
+    node_message::{
+        self, AfgAuthoritySet, Finalized, NodeHwBench, SystemConnected, SystemInterval,
+    },
     node_types::{Block, BlockHash, NodeDetails},
 };
 use itertools::Itertools;
@@ -28,6 +30,7 @@ struct NodeUpdates {
     notify_finalized: Option<Finalized>,
     afg_authority_set: Option<AfgAuthoritySet>,
     location: Location,
+    hwbench: Option<NodeHwBench>,
 }
 
 #[derive(Default, Clone, Copy, Deserialize, Serialize)]
@@ -274,6 +277,10 @@ impl State {
                             self.state
                                 .update_node(node_id, &AfgAuthoritySet(authority), &mut feed);
                         }
+                        if let Some(hwbench) = updates.hwbench {
+                            self.state
+                                .update_node(node_id, &HwBench(hwbench), &mut feed);
+                        }
                     }
                     vec.push(feed)
                 }
@@ -362,6 +369,7 @@ impl State {
             BlockImport(import) => updates.block_import = Some(import),
             NotifyFinalized(finalized) => updates.notify_finalized = Some(finalized),
             AfgAuthoritySet(authority) => updates.afg_authority_set = Some(authority),
+            HwBench(hwbench) => updates.hwbench = Some(hwbench),
         }
     }
 

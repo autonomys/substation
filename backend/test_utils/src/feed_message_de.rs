@@ -133,6 +133,7 @@ pub enum FeedMessage {
 #[derive(Debug, PartialEq)]
 pub struct NodeDetails {
     pub name: String,
+    pub implementation: String,
     pub version: String,
     pub validator: Option<String>,
     pub network_id: Option<String>,
@@ -191,7 +192,7 @@ impl FeedMessage {
             3 => {
                 let (
                     node_id,
-                    (name, version, validator, network_id),
+                    (name, implementation, version, validator, network_id),
                     stats,
                     io,
                     hardware,
@@ -208,6 +209,7 @@ impl FeedMessage {
                     node: NodeDetails {
                         name,
                         version,
+                        implementation,
                         validator,
                         network_id,
                     },

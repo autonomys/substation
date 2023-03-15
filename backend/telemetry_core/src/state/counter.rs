@@ -101,4 +101,19 @@ where
             unknown: self.empty,
         }
     }
+
+    /// Generates a sorted table of all of the keys.
+    pub fn generate_ranking_ordered(&self) -> Ranking<K>
+    where
+        K: Copy + Clone + Ord,
+    {
+        let mut list: Vec<(K, u64)> = self.map.iter().map(|(key, count)| (*key, *count)).collect();
+        list.sort_unstable_by_key(|&(key, count)| (key, !count));
+
+        Ranking {
+            list,
+            other: 0,
+            unknown: self.empty,
+        }
+    }
 }
