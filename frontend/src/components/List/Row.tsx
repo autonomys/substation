@@ -21,9 +21,8 @@ import { PersistentSet } from '../../persist';
 import {
   Column,
   NameColumn,
-  // These columns are removed since backend is not sending us these data anymore, but we might need them later
-  // ValidatorColumn,
-  // ImplementationColumn,
+  ValidatorColumn,
+  ImplementationColumn,
   LocationColumn,
   NetworkIdColumn,
   PeersColumn,
@@ -56,9 +55,8 @@ interface RowState {
 export class Row extends React.Component<RowProps, RowState> {
   public static readonly columns: Column[] = [
     NameColumn,
-    // These columns are removed since backend is not sending us these data anymore, but we might need them later
-    // ValidatorColumn,
-    // ImplementationColumn,
+    ValidatorColumn,
+    ImplementationColumn,
     LocationColumn,
     NetworkIdColumn,
     PeersColumn,

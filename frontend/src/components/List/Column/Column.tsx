@@ -22,9 +22,8 @@ import './Column.css';
 import {
   NameColumn,
   LocationColumn,
-  // These columns are removed since backend is not sending us these data anymore, but we might need them later
-  // ValidatorColumn,
-  // ImplementationColumn,
+  ValidatorColumn,
+  ImplementationColumn,
   NetworkIdColumn,
   PeersColumn,
   TxsColumn,
@@ -43,9 +42,8 @@ import {
 
 export type Column =
   | typeof NameColumn
-  // These columns are removed since backend is not sending us these data anymore, but we might need them later
-  // | typeof ValidatorColumn
-  // | typeof ImplementationColumn
+  | typeof ValidatorColumn
+  | typeof ImplementationColumn
   | typeof LocationColumn
   | typeof NetworkIdColumn
   | typeof PeersColumn
