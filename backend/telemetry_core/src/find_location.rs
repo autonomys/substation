@@ -34,7 +34,7 @@ pub struct Locator {
 }
 
 impl Locator {
-    /// taken from here: https://github.com/P3TERX/GeoLite.mmdb/releases/tag/2022.06.07
+    /// taken from here: https://github.com/P3TERX/GeoLite.mmdb/releases/tag/2023.04.04
     const CITY_DATA: &'static [u8] = include_bytes!("GeoLite2-City.mmdb");
 
     pub fn new(cache: FxHashMap<IpAddr, Arc<NodeLocation>>) -> Self {
