@@ -34,7 +34,7 @@ pub struct Locator {
 }
 
 impl Locator {
-    /// taken from here: https://github.com/P3TERX/GeoLite.mmdb/releases/tag/2022.06.07
+    /// taken from here: https://github.com/P3TERX/GeoLite.mmdb/releases/tag/2023.04.04
     const CITY_DATA: &'static [u8] = include_bytes!("GeoLite2-City.mmdb");
 
     pub fn new(cache: FxHashMap<IpAddr, Arc<NodeLocation>>) -> Self {
@@ -86,6 +86,6 @@ mod tests {
     fn locate_random_ip() {
         let ip = "12.5.56.25".parse().unwrap();
         let node_location = Locator::new(Default::default()).locate(ip).unwrap();
-        assert_eq!(&*node_location.city, "El Paso");
+        assert_eq!(&*node_location.city, "Victoria");
     }
 }
