@@ -39,6 +39,11 @@ interface LocationState {
   hover: boolean;
 }
 
+// logarithmic scale for location dots
+const getNodeSize = (nodeCount: number) => {
+  return 6 + Math.log(nodeCount) * 2;
+};
+
 export class Location extends React.Component<LocationProps, LocationState> {
   public readonly state = { hover: false };
 
@@ -46,11 +51,7 @@ export class Location extends React.Component<LocationProps, LocationState> {
     const { position, nodeCount } = this.props;
     const { left, top, quarter } = position;
     const className = `Location Location-quarter${quarter}`;
-
-    // location dots have logarithmic scale
-    // 6px is default size for a single node dot,
-    // log of 1 is 0, so we have fallback value of 1
-    const size = 6 * (Math.log(nodeCount) || 1);
+    const size = getNodeSize(nodeCount);
 
     return (
       <div
