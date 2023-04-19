@@ -41,9 +41,7 @@ interface LocationState {
 
 // logarithmic scale for location dots
 const getNodeSize = (nodeCount: number) => {
-  const log = Math.log(nodeCount) / Math.log(2);
-  const size = 6 + log * 2;
-  return size < 1 ? 1 : size;
+  return 6 + Math.log(nodeCount) * 2;
 };
 
 export class Location extends React.Component<LocationProps, LocationState> {
