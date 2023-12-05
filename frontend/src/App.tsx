@@ -141,7 +141,7 @@ export default class App extends React.Component<{}, {}> {
       return (
         <div className="App App-no-telemetry">
           <OfflineIndicator status={status} />
-          Waiting for telemetry&hellip;
+          Waiting for substation&hellip;
         </div>
       );
     }
