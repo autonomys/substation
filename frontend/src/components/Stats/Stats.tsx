@@ -154,6 +154,7 @@ export class Stats extends React.Component<StatsProps> {
     const stats = appState.chainStats;
     if (stats) {
       add('version', 'Version', identity, stats.version);
+      add('implementation', 'Implementation', identity, stats.implementation);
       add('target_os', 'Operating System', identity, stats.target_os);
       add('target_arch', 'CPU Architecture', identity, stats.target_arch);
       add('cpu', 'CPU', identity, stats.cpu);
