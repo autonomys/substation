@@ -124,7 +124,8 @@ impl ChainStatsCollator {
         hwbench: Option<&common::node_types::NodeHwBench>,
         op: CounterValue,
     ) {
-        self.version.modify(Some(&*details.version), op);
+        let full_version = format!("{} v{}", details.implementation, details.version);
+        self.version.modify(Some(&full_version), op);
 
         self.implementation
             .modify(Some(&*details.implementation), op);

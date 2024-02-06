@@ -104,7 +104,7 @@ export class ImplementationColumn extends React.Component<ColumnProps> {
     return (
       <td className="Column">
         <Tooltip text={`${implementation} v${version}`} />
-        <Icon src={implIcon} /> {semver}
+        <Icon src={implIcon} /> {`${implementation} v${semver}`}
       </td>
     );
   }
