@@ -239,6 +239,7 @@ pub struct Ranking<K> {
 #[derive(Serialize, PartialEq, Eq, Default, Clone)]
 pub struct ChainStats {
     pub version: Ranking<String>,
+    pub implementation: Ranking<String>,
     pub target_os: Ranking<String>,
     pub target_arch: Ranking<String>,
     pub cpu: Ranking<String>,

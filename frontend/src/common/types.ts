@@ -98,6 +98,7 @@ export type Range = [number, number | null];
 
 export type ChainStats = {
   version: Maybe<Ranking<string>>;
+  implementation: Maybe<Ranking<string>>;
   target_os: Maybe<Ranking<string>>;
   target_arch: Maybe<Ranking<string>>;
   cpu: Maybe<Ranking<string>>;

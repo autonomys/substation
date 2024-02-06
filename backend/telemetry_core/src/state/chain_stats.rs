@@ -102,6 +102,7 @@ fn bucket_memory(memory: u64) -> (u32, Option<u32>) {
 #[derive(Default, Clone)]
 pub struct ChainStatsCollator {
     version: Counter<String>,
+    implementation: Counter<String>,
     target_os: Counter<String>,
     target_arch: Counter<String>,
     cpu: Counter<String>,
@@ -124,6 +125,9 @@ impl ChainStatsCollator {
         op: CounterValue,
     ) {
         self.version.modify(Some(&*details.version), op);
+
+        self.implementation
+            .modify(Some(&*details.implementation), op);
 
         self.target_os
             .modify(details.target_os.as_ref().map(|value| &**value), op);
@@ -206,6 +210,7 @@ impl ChainStatsCollator {
     pub fn generate(&self) -> ChainStats {
         ChainStats {
             version: self.version.generate_ranking_top(10),
+            implementation: self.implementation.generate_ranking_top(10),
             target_os: self.target_os.generate_ranking_top(10),
             target_arch: self.target_arch.generate_ranking_top(10),
             cpu: self.cpu.generate_ranking_top(10),
